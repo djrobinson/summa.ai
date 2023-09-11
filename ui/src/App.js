@@ -1,7 +1,9 @@
-import React from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
-import Layout from './Layout'
-import WorkflowBuilder from './WorkflowBuilder/WorkflowBuilder'
+import React from "react";
+import { Routes, Route, Link } from "react-router-dom";
+import Layout from "./Layout";
+import WorkflowBuilder from "./WorkflowBuilder/WorkflowBuilder";
+import DataSources from "./DataSources/DataSources";
+import Home from "./Home";
 
 export default function App() {
   return (
@@ -11,7 +13,9 @@ export default function App() {
             parent route elements. See the note about <Outlet> below. */}
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Workflow />} />
+          <Route index element={<Home />} />
+          <Route path="/workflows" element={<WorkflowBuilder />} />
+          <Route path="/data" element={<DataSources />} />
           {/* Using path="*"" means "match anything", so this route
                 acts like a catch-all for URLs that we don't have explicit
                 routes for. */}
@@ -19,30 +23,30 @@ export default function App() {
         </Route>
       </Routes>
     </div>
-  )
+  );
 }
 
 function Workflow() {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'row',
-        height: '100%',
+        display: "flex",
+        flexDirection: "row",
+        height: "100%",
       }}
     >
       <div
         style={{
-          display: 'flex',
+          display: "flex",
           flex: 1,
-          height: 'calc(100vh - 120px)',
-          flexDirection: 'column',
+          height: "calc(100vh - 120px)",
+          flexDirection: "column",
         }}
       >
         <WorkflowBuilder />
       </div>
     </div>
-  )
+  );
 }
 
 function NoMatch() {
@@ -53,5 +57,5 @@ function NoMatch() {
         <Link to="/">Go to the Speeches page</Link>
       </p>
     </div>
-  )
+  );
 }

@@ -37,19 +37,15 @@ const SidebarContent = ({ onClose, ...rest }) => {
     >
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
         <Text fontSize="3xl" fontFamily="monospace" fontWeight="bold">
-          Synopsis
+          <Link to="/">Synopsis</Link>
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
-
       <NavItem>
-        <Link to="/">Create Workflow</Link>
+        <Link to="/data">Data Sources</Link>
       </NavItem>
       <NavItem>
-        <Link to="/nothing-here">Manage Data</Link>
-      </NavItem>
-      <NavItem>
-        <Link to="/graphql">GraphQL Explorer</Link>
+        <Link to="/workflows">Workflows</Link>
       </NavItem>
     </Box>
   );
@@ -149,7 +145,7 @@ const MobileNav = ({ onOpen, ...rest }) => {
                   spacing="1px"
                   ml="2"
                 >
-                  <Text fontSize="sm">Justina Clark</Text>
+                  <Text fontSize="sm">Danny Robinson</Text>
                   <Text fontSize="xs" color="gray.600">
                     Admin
                   </Text>
@@ -164,10 +160,10 @@ const MobileNav = ({ onOpen, ...rest }) => {
               borderColor={useColorModeValue("gray.200", "gray.700")}
             >
               <MenuItem>
-                <Link to="/">Create Workflow</Link>
+                <Link to="/workflows">Create Workflow</Link>
               </MenuItem>
               <MenuItem>
-                <Link to="/nothing-here">Manage Data Sources</Link>
+                <Link to="/data">Manage Data Sources</Link>
               </MenuItem>
 
               <MenuDivider />
@@ -201,7 +197,6 @@ const Layout = () => {
           <SidebarContent onClose={onClose} />
         </DrawerContent>
       </Drawer>
-      {/* mobilenav */}
       <MobileNav onOpen={onOpen} />
       <Box ml={{ base: 0, md: 60 }} p="4">
         {/* Content */}
