@@ -47,6 +47,12 @@ const SidebarContent = ({ onClose, ...rest }) => {
       <NavItem>
         <Link to="/workflows">Workflows</Link>
       </NavItem>
+      <NavItem>
+        <Link to="/reports">Reports</Link>
+      </NavItem>
+      <NavItem>
+        <Link to="/requests">Requests</Link>
+      </NavItem>
     </Box>
   );
 };
@@ -160,10 +166,13 @@ const MobileNav = ({ onOpen, ...rest }) => {
               borderColor={useColorModeValue("gray.200", "gray.700")}
             >
               <MenuItem>
-                <Link to="/workflows">Create Workflow</Link>
+                <Link to="/workflows">Workflows</Link>
               </MenuItem>
               <MenuItem>
-                <Link to="/data">Manage Data Sources</Link>
+                <Link to="/data">Data Sources</Link>
+              </MenuItem>
+              <MenuItem>
+                <Link to="/reports">Reports</Link>
               </MenuItem>
 
               <MenuDivider />

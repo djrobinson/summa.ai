@@ -1,8 +1,10 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
+
 import Layout from "./Layout";
 import WorkflowBuilder from "./WorkflowBuilder/WorkflowBuilder";
 import DataSources from "./DataSources/DataSources";
+import RequestManager from "./RequestManager/RequestManager";
 import Home from "./Home";
 
 export default function App() {
@@ -16,35 +18,14 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="/workflows" element={<WorkflowBuilder />} />
           <Route path="/data" element={<DataSources />} />
+          <Route path="/reports" element={<DataSources />} />
+          <Route path="/requests" element={<RequestManager />} />
           {/* Using path="*"" means "match anything", so this route
                 acts like a catch-all for URLs that we don't have explicit
                 routes for. */}
           <Route path="*" element={<NoMatch />} />
         </Route>
       </Routes>
-    </div>
-  );
-}
-
-function Workflow() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        height: "100%",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flex: 1,
-          height: "calc(100vh - 120px)",
-          flexDirection: "column",
-        }}
-      >
-        <WorkflowBuilder />
-      </div>
     </div>
   );
 }
