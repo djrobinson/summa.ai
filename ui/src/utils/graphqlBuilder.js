@@ -37,6 +37,7 @@ _additional {
   }
   return query;
 };
+
 const createFilter = (path, operator, valueText) => {
   return `{
 path: ${JSON.stringify(path)},

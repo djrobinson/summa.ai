@@ -66,15 +66,15 @@ const FilterSortSimple = ({
   phase,
   prevPhaseID,
   fields = {
-    Phase: { type: "Phase", properties: ["title", "intermediates"] },
-    "Phase.intermediates": { type: "Intermediate", properties: ["text"]}
+    Intermediate: { type: "Intermediate", properties: ["text", "phase"] },
+    "Intermediate.phase": { type: "Phase", properties: ["title"]}
   },
 }) => {
   const [fieldFilterIndex, setFieldFilterIndex] = React.useState(0); // 1 because we always want to have at least one filter
   const [filters, setFilters] = React.useState({
-    Phase: [
+    Intermediate: [
       {
-        path: ["id"],
+        path: ["phase", "Phase", "id"],
         operator: 'Equal',
         valueText: prevPhaseID,
       },
@@ -106,15 +106,15 @@ const FilterSortSimple = ({
   console.log("INTERMEDIATE RES: ", data, error, loading);
   let finalString = "";
   let finalContexts = [];
-  if (data && !isEmpty(data.Get["Phase"]) && data.Get["Phase"][0].intermediates) {
-    finalContexts = data.Get["Phase"][0].intermediates.map((int) => int.text);
-    finalString = data.Get["Phase"][0].intermediates.reduce(
+  if (data && !isEmpty(data.Get["Intermediate"]) && data.Get["Intermediate"][0]) {
+    finalContexts = data.Get["Intermediate"].map((int) => int.text);
+    finalString = data.Get["Intermediate"].reduce(
       (acc, int) => acc + int.text,
       ""
     );
     finalString = finalContexts.join("\n");
   }
-  const intermediates = data && !isEmpty(data.Get["Phase"]) && data.Get["Phase"][0].intermediates ? data.Get["Phase"][0].intermediates : [];
+  const intermediates = data && !isEmpty(data.Get["Intermediate"]) && data.Get["Intermediate"] ? data.Get["Intermediate"] : [];
   
   return (
     <Box w="600px">
@@ -125,7 +125,7 @@ const FilterSortSimple = ({
         {[...Array(fieldFilterIndex)].map((item, i) => (
           <FilterOptions
             fieldFilterIndex={i}
-            field={"Phase"}
+            type={"Intermediate"}
             fields={["text", "order"]}
             filters={filters}
             setFilters={setFilters}

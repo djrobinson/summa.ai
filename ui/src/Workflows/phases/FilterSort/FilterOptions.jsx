@@ -36,20 +36,10 @@ const sortTypes = {
 };
 
 const createFilters = (filters, key, value, field, index) => {
-  // These should always hold true together
-  if (!filters[field] && index === 0) {
-    return {
-      ...filters,
-      [field]: [
-        {
-          [key]: value,
-        },
-      ],
-    };
-  }
+
   const newArray = [...filters[field]];
-  newArray[index] = {
-    ...newArray[index],
+  newArray[index + 1] = {
+    ...newArray[index + 1],
     [key]: value,
   };
   return {
@@ -60,29 +50,29 @@ const createFilters = (filters, key, value, field, index) => {
 
 const FilterOptions = ({
   fieldFilterIndex,
-  field,
+  type,
   fields,
   filters,
   setFilters,
 }) => {
-  const [type, setType] = React.useState(null); // [type, setType] = useState(null)
+  const [selectedType, setSelectedType] = React.useState(null); // [type, setSelectedType] = useState(null)
   const [topPath, setTopPath] = React.useState(null);
-
+  console.log('FILTERS: ', filters)
   return (
     <Flex p="4px">
     <Select
         placeholder="Choose type..."
         onChange={(e) => {
-          setType(e.target.value);
+          setSelectedType(e.target.value);
         }}
-        value={type}
+        value={selectedType}
       >
         {['Filter', 'Search', 'Sort', 'Limit'].map((k) => (
           <option value={k}>{k}</option>
         ))}
       </Select>
       
-      {type === 'Filter' && (
+      {selectedType === 'Filter' && (
         <>
         <Select
             placeholder="Filter type..."
@@ -91,7 +81,7 @@ const FilterOptions = ({
                 filters,
                 "operator",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
@@ -109,7 +99,7 @@ const FilterOptions = ({
                 filters,
                 "path",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
@@ -129,7 +119,7 @@ const FilterOptions = ({
                 filters,
                 "valueText",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
@@ -138,7 +128,7 @@ const FilterOptions = ({
           />
         </>
       )}
-      {type === 'Search' && (
+      {selectedType === 'Search' && (
         <>
           <Select
             placeholder="Select a field to search"
@@ -147,7 +137,7 @@ const FilterOptions = ({
                 filters,
                 "path",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
@@ -167,7 +157,7 @@ const FilterOptions = ({
                 filters,
                 "valueText",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
@@ -176,7 +166,7 @@ const FilterOptions = ({
           />
         </>
       )}
-      {type === 'Sort' && (
+      {selectedType === 'Sort' && (
         <>
           <Select
             placeholder="Select a field to sort"
@@ -185,7 +175,7 @@ const FilterOptions = ({
                 filters,
                 "path",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
@@ -204,7 +194,7 @@ const FilterOptions = ({
                 filters,
                 "path",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
@@ -218,7 +208,7 @@ const FilterOptions = ({
           </Select>
         </>
       )}
-      {type === 'Limit' && (
+      {selectedType === 'Limit' && (
         <>
 
           <Input
@@ -228,7 +218,7 @@ const FilterOptions = ({
                 filters,
                 "valueText",
                 e.target.value,
-                field,
+                type,
                 fieldFilterIndex
               );
               setFilters(newFilters);
