@@ -152,17 +152,14 @@ const FilterOptions = ({
           <Select
             placeholder="Select a field to search"
             onChange={(e) => {
-              const newFilters = createFilters(
-                filters,
-                "path",
-                e.target.value,
-                type,
-                filterIndex
-              );
-              setFilters(newFilters);
-              setTopPath(e.target.value);
+              setSearches({
+                nearText: {
+                  path: e.target.value
+                }
+              });
+
             }}
-            value={topPath}
+            value={searches.nearText?.path || null}
           >
             {fields.map((k) => (
               <option value={k}>{k}</option>
@@ -172,16 +169,14 @@ const FilterOptions = ({
           <Input
             placeholder="Value"
             onChange={(e) => {
-              const newFilters = createFilters(
-                filters,
-                "valueText",
-                e.target.value,
-                type,
-                filterIndex
-              );
-              setFilters(newFilters);
+              setSearches({
+                nearText: {
+                  ...searches.nearText,
+                  concept: e.target.value,
+                }
+              });
             }}
-            value={filters.valueText}
+            value={searches.nearText?.concept || null}
           />
         </>
       )}

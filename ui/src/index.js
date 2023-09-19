@@ -12,9 +12,13 @@ import {
   useRecoilValue,
 } from "recoil";
 
+// TODO: HOW TO GET OPENAI API KEY HERE?
 const client = new ApolloClient({
   uri: "http://localhost:8080/v1/graphql",
   cache: new InMemoryCache(),
+  headers: {
+    "X-Openai-Api-Key": "sk-",
+  },
   defaultOptions: {
     watchQuery: {
       fetchPolicy: "no-cache",

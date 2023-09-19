@@ -74,8 +74,7 @@ const createSearches = (searches) => {
   let search = ''
   if (searches.nearText) {
     search += `\nnearText: {
-concepts: ["${searches.nearText.concept}"],
-distance: ${searches.nearText.distance}
+concepts: ["${searches.nearText.concept}"]
 }`;
 }
 return search
