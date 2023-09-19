@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "weaviate"
+name = "db"
 version = "0.1.0"
 description = ""
 authors = ["Danny Robinson <danny.robinson111@gmail.com>"]

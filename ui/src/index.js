@@ -15,6 +15,16 @@ import {
 const client = new ApolloClient({
   uri: "http://localhost:8080/v1/graphql",
   cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: "no-cache",
+      errorPolicy: "ignore",
+    },
+    query: {
+      fetchPolicy: "no-cache",
+      errorPolicy: "all",
+    },
+  },
 });
 
 const root = createRoot(document.getElementById("root"));

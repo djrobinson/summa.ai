@@ -1,0 +1,20 @@
+org: danny1robinson
+app: synopsis
+service: lambdas
+frameworkVersion: '3'
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-west-2
+
+functions:
+  fileupload:
+    handler: index.handler
+    timeout: 30
+    events:
+    - http:
+        path: /fileupload
+        method: post
+        cors: true

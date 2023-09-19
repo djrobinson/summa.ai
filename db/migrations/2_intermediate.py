@@ -20,6 +20,10 @@ object = {
             "dataType": ["int"],
         },
         {
+            "name": "order",
+            "dataType": ["int"]
+        },
+        {
             "dataType": ["text"],
             "name": "userid",
         },
@@ -33,6 +37,7 @@ object = {
         },
         {"name": "source", "dataType": ["Intermediate"]},
         {"name": "sourceFor", "dataType": ["Intermediate"]},
+
     ],
 }
 

@@ -24,6 +24,10 @@ object = {
         },
         {
             "dataType": ["text"],
+            "name": "selection",
+        },
+        {
+            "dataType": ["text"],
             "name": "weaviate_url",
         },
         {
@@ -33,6 +37,10 @@ object = {
         {
             "dataType": ["Filter"],
             "name": "filters",
+        },
+        {
+            "dataType": ["Workflow"],
+            "name": "workflow",
         },
     ],
 }

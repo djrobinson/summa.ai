@@ -2,10 +2,11 @@ import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
 import Layout from "./Layout";
-import WorkflowBuilder from "./WorkflowBuilder/WorkflowBuilder";
+import WorkflowBuilder from "./Workflows/WorkflowBuilder";
 import DataSources from "./DataSources/DataSources";
 import RequestManager from "./RequestManager/RequestManager";
 import Home from "./Home";
+import Workflow from "./Workflows/Workflow";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="/workflows" element={<WorkflowBuilder />} />
+          <Route path="/workflows/:id" element={<Workflow />} />
           <Route path="/data" element={<DataSources />} />
           <Route path="/reports" element={<DataSources />} />
           <Route path="/requests" element={<RequestManager />} />

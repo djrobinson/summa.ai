@@ -1,13 +1,6 @@
-import { gql } from '@apollo/client'
-import { isEmpty } from 'lodash'
+import { isEmpty } from "lodash";
 
-const createFilter = (path, operator, valueText) => {
-  return `{
-      path: ${JSON.stringify(path)},
-      operator: ${operator},
-      valueText: "${valueText}"
-  }`
-}
+
 
 const recurseQueryLevels = (
   property,
@@ -15,106 +8,154 @@ const recurseQueryLevels = (
   parentPath,
   query,
   filters,
-  iteration = 3,
+  iteration = 3
 ) => {
-  const indent = '  '.repeat(iteration)
+  const indent = "  ".repeat(iteration);
   if (
-    fields[parentPath + '.' + property] &&
-    fields[parentPath + '.' + property].properties
+    fields[parentPath + "." + property] &&
+    fields[parentPath + "." + property].properties
   ) {
     query += `\n${indent}${property} {\n${indent}  ... on ${
-      fields[parentPath + '.' + property].type
-    } {`
-    fields[parentPath + '.' + property].properties.forEach((p2) => {
+      fields[parentPath + "." + property].type
+    } {`;
+    fields[parentPath + "." + property].properties.forEach((p2) => {
       query = recurseQueryLevels(
         p2,
         fields,
-        parentPath + '.' + property,
+        parentPath + "." + property,
         query,
         filters,
-        iteration + 2,
-      )
-    })
-    query += `\n${indent}  }\n${indent}}`
+        iteration + 2
+      );
+    });
+    query += `\n${indent}  }\n${indent}}`;
   } else {
-    query += `\n${indent}${property}`
+    query += `\n${indent}${property}`;
   }
-  return query
-}
+  return query;
+};
 
-export const buildGraphQLQuery = (
+export const buildNestedGraphQLQuery = (
   fields,
   filters = {},
-  limit = null,
+  searches = {},
+  sorts = {},
+  limit = null
 ) => {
-  let query = `{ \n  Get {`
+  let query = `{ \n  Get {`;
   const orderedFields = Object.keys(fields).sort((a, b) => {
-    const aLen = a.split('.').length
-    const bLen = b.split('.').length
-    return aLen > bLen
-  })
-  const topFields = orderedFields.filter((f) => !f.includes('.'))
+    const aLen = a.split(".").length;
+    const bLen = b.split(".").length;
+    return aLen > bLen;
+  });
+  const topFields = orderedFields.filter((f) => !f.includes("."));
   topFields.forEach((f) => {
     if (fields[f].properties) {
-      // Limits/filters/sorts will all end up here!
-      if (!limit && isEmpty(filters)) {
-        query += `\n    ${f} {`
-      } else if (isEmpty(filters) && limit > 0) {
-        query += `\n    ${f}(limit: ${limit}) {`
-      } else {
-        let filter = ''
-        if (filters[f].length > 0) {
-          filter += `{
-            operator: And,
-            operands: [`
-          filter += filters[f]
-            .map((ff) => {
-              return createFilter(ff.path, ff.operator, ff.valueText)
-            })
-            .join(',')
-          filter += `]
-          }`
-        } else {
-          const thisFilter = filters[f][0]
-          filter = createFilter(
-            thisFilter.path,
-            thisFilter.operator,
-            thisFilter.valueText,
-          )
-        }
-        query += `\n    ${f}(where: ${filter}) {`
-      }
-
+      // DELETING OLD CODE SO I DON'T CONFUSE MYSELF
+      // BUT LEAVING THE RECURSIVE BITS CUZ I'LL NEED TO REIMPLEMENT
+      // WHEN I GET THE WEAVIATE CONNECTION WORKING AGAIN
       fields[f].properties.forEach((p) => {
-        query = recurseQueryLevels(p, fields, f, query, filters)
-      })
+        query = recurseQueryLevels(p, fields, f, query, filters);
+      });
     }
-  })
+  });
   if (!isEmpty(fields)) {
-    query += '\n    }'
+    query += "\n}";
   }
-  query += `\n  }\n}`
-  return query
+  query += `\n  }\n}`;
+  return query;
+};
+
+const createFilter = (path, operator, valueText) => {
+  return `{
+path: ${JSON.stringify(path)},
+operator: ${operator},
+valueText: "${valueText}"
+}`;
+};
+
+const createFilters = (filters, f) => {
+  let filter = ''
+  if (filters[f].length > 0) {
+    filter += `{
+operator: And,
+operands: [`;
+    filter += filters[f]
+      .map((ff) => {
+        return createFilter(ff.path, ff.operator, ff.valueText);
+      })
+      .join(",");
+    filter += `]
+}`;
+  } else {
+    const thisFilter = filters[f][0];
+    filter = createFilter(
+      thisFilter.path,
+      thisFilter.operator,
+      thisFilter.valueText
+    );
+  }
+  return filter
 }
 
-export const buildIntermediateGraphql = (id, filters) => {
-  const GET_INTERMEDIATES = `
-    query GetIntermediates($id: String!) {
-      Get {
-        Phase(
-          where: {operator: And, operands: [{ path: "id", operator: Equal, valueString: $id }]}
-        ) {
-          intermediates {
-            ... on Intermediate {
-              _additional {
-                id
-              }
-              text
-            }
-          }
-        }
-      }
-    }
-  `
-  return GET_INTERMEDIATES
+const createSearches = (searches) => {
+  let search = ''
+  if (searches.nearText) {
+    search += `\nnearText: {
+concepts: ["${searches.nearText.concept}"],
+distance: ${searches.nearText.distance}
+}`;
 }
+return search
+}
+
+const createSorts = (sorts) => {
+  return `[${sorts.map((f) => {
+    return `{ path: "${f.path}", order: "${f.order}" }`;
+  })}]`;}
+
+
+export const buildSimpleGraphQLQuery = (
+  types,
+  filters = {},
+  searches = {},
+  sorts = [],
+  limit = null
+) => {
+  let query = `{\nGet {`;
+  const typeList = Object.keys(types)
+  typeList.forEach((f) => {
+    if (types[f].properties) {
+      // Limits/filters/sorts will all end up here!
+      query += `\n${f}`;
+      if (!limit && isEmpty(filters) && isEmpty(searches) && isEmpty(sorts)) {
+        query += ` {`;
+      } else {
+        query += ` (`;
+        if(!isEmpty(filters)) {
+          let filter = createFilters(filters, f)
+          query += `\nwhere: ${filter}`;
+        }
+        if(!isEmpty(sorts)) {
+          const sort = createSorts(sorts, f)
+          query += `\nsort: ${sort}`;
+        }
+        if(!isEmpty(searches)) {
+          query += createSearches(searches, f)
+        }
+        if (limit > 0) {
+          query += `\nlimit: ${limit}`;
+        } 
+        query += `\n) {`;
+      }
+      types[f].properties.forEach((p) => {
+        query += `\n${p}`;
+      });
+    }
+  });
+  if (!isEmpty(types)) {
+    query += "\n}";
+  }
+  query += `\n}\n}`;
+  return query;
+};

@@ -37,7 +37,7 @@ const SidebarContent = ({ onClose, ...rest }) => {
     >
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
         <Text fontSize="3xl" fontFamily="monospace" fontWeight="bold">
-          <Link to="/">Synopsis</Link>
+          <Link to="/">Summa</Link>
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
@@ -121,7 +121,7 @@ const MobileNav = ({ onOpen, ...rest }) => {
         fontFamily="monospace"
         fontWeight="bold"
       >
-        Synopsis
+        Summa
       </Text>
 
       <HStack spacing={{ base: "0", md: "6" }}>

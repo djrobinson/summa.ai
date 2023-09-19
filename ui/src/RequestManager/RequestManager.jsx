@@ -11,7 +11,6 @@ import {
   Progress,
   Stack,
 } from "@chakra-ui/react";
-import { createObject, createRelationship } from "../utils/weaviateServices";
 import { isEmpty } from "lodash";
 
 const runPrompt = async (prompt) => {

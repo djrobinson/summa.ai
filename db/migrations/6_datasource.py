@@ -7,7 +7,7 @@ client = weaviate.Client(
 object = {
     "class": "DataSource",
     "vectorIndexConfig": {
-        "skip": True
+        "skip": "true"
     },
     "properties": [
         {
@@ -31,13 +31,18 @@ object = {
             "dataType": ["Field"],
         },
         {
-            "name": "phases",
-            "dataType": ["Phase"],
-        },
+            "name": "intermediates",
+            "dataType": ["Intermediate"],
+        }
     ],
 }
 
 client.schema.create_class(object)
 
-add_prop = {"dataType": ["DataSource"], "name": "data_source"}
-client.schema.property.create("Phase", add_prop)
+
+add_prop = {
+    "name": "dataSource",
+    "dataType": ["DataSource"]
+}
+client.schema.property.create("Intermediate", add_prop)
+
