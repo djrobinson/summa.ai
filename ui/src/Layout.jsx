@@ -23,7 +23,7 @@ import {
 } from "@chakra-ui/react";
 import { FiMenu, FiBell, FiChevronDown } from "react-icons/fi";
 
-const SidebarContent = ({ onClose, ...rest }) => {
+const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
   return (
     <Box
       transition="3s ease"
@@ -41,7 +41,8 @@ const SidebarContent = ({ onClose, ...rest }) => {
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
-      <NavItem>
+      {!hideOptions &&(
+      <><NavItem>
         <Link to="/data">Data Sources</Link>
       </NavItem>
       <NavItem>
@@ -52,6 +53,9 @@ const SidebarContent = ({ onClose, ...rest }) => {
       </NavItem>
       <NavItem>
         <Link to="/requests">Requests</Link>
+      </NavItem></>)}
+      <NavItem>
+        <Link to="/account">Account</Link>
       </NavItem>
     </Box>
   );
@@ -94,7 +98,7 @@ const NavItem = ({ icon, children, ...rest }) => {
   );
 };
 
-const MobileNav = ({ onOpen, ...rest }) => {
+const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
   return (
     <Flex
       ml={{ base: 0, md: 60 }}
@@ -165,7 +169,7 @@ const MobileNav = ({ onOpen, ...rest }) => {
               bg={useColorModeValue("white", "gray.900")}
               borderColor={useColorModeValue("gray.200", "gray.700")}
             >
-              <MenuItem>
+              {!hideOptions && (<><MenuItem>
                 <Link to="/workflows">Workflows</Link>
               </MenuItem>
               <MenuItem>
@@ -173,6 +177,9 @@ const MobileNav = ({ onOpen, ...rest }) => {
               </MenuItem>
               <MenuItem>
                 <Link to="/reports">Reports</Link>
+              </MenuItem></>)}
+              <MenuItem>
+                <Link to="/account">Account</Link>
               </MenuItem>
 
               <MenuDivider />
@@ -185,12 +192,13 @@ const MobileNav = ({ onOpen, ...rest }) => {
   );
 };
 
-const Layout = () => {
+const Layout = ({ hideOptions = true }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <Box minH="100vh" bg={useColorModeValue("gray.100", "gray.900")}>
       <SidebarContent
+      hideOptions={hideOptions}
         onClose={() => onClose}
         display={{ base: "none", md: "block" }}
       />
@@ -203,10 +211,10 @@ const Layout = () => {
         size="full"
       >
         <DrawerContent>
-          <SidebarContent onClose={onClose} />
+          <SidebarContent hideOptions={hideOptions} onClose={onClose} />
         </DrawerContent>
       </Drawer>
-      <MobileNav onOpen={onOpen} />
+      <MobileNav onOpen={onOpen} hideOptions={hideOptions} />
       <Box ml={{ base: 0, md: 60 }} p="4">
         {/* Content */}
         <Outlet />

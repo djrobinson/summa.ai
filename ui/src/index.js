@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.js";
 import { BrowserRouter } from "react-router-dom";
-import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
+
 import { ChakraProvider } from "@chakra-ui/react";
 import {
   RecoilRoot,
@@ -12,36 +12,16 @@ import {
   useRecoilValue,
 } from "recoil";
 
-// TODO: HOW TO GET OPENAI API KEY HERE?
-const client = new ApolloClient({
-  uri: "http://localhost:8080/v1/graphql",
-  cache: new InMemoryCache(),
-  headers: {
-    "X-Openai-Api-Key": "sk-",
-  },
-  defaultOptions: {
-    watchQuery: {
-      fetchPolicy: "no-cache",
-      errorPolicy: "ignore",
-    },
-    query: {
-      fetchPolicy: "no-cache",
-      errorPolicy: "all",
-    },
-  },
-});
 
 const root = createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <RecoilRoot>
-      <ApolloProvider client={client}>
         <ChakraProvider>
           <BrowserRouter>
             <App />
           </BrowserRouter>
         </ChakraProvider>
-      </ApolloProvider>
     </RecoilRoot>
   </React.StrictMode>
 );
