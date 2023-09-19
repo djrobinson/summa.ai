@@ -83,7 +83,7 @@ return search
 
 const createSorts = (sorts) => {
   return `[${sorts.map((f) => {
-    return `{ path: "${f.path}", order: "${f.order}" }`;
+    return `{ path: "${f.path}", order: ${f.order} }`;
   })}]`;}
 
 
@@ -94,6 +94,7 @@ export const buildSimpleGraphQLQuery = (
   sorts = [],
   limit = null
 ) => {
+  console.log("SORTS: ", sorts);
   let query = `{\nGet {`;
   const orderedFields = Object.keys(types).sort((a, b) => {
     const aLen = a.split(".").length;

@@ -66,7 +66,7 @@ const FilterSortSimple = ({
   phase,
   prevPhaseID,
   fields = {
-    Intermediate: { type: "Intermediate", properties: ["text", "phase"] },
+    Intermediate: { type: "Intermediate", properties: ["text", "order", "phase"] },
     "Intermediate.phase": { type: "Phase", properties: ["title"]}
   },
 }) => {
@@ -124,11 +124,18 @@ const FilterSortSimple = ({
       <Box h="300px">
         {[...Array(fieldFilterIndex)].map((item, i) => (
           <FilterOptions
-            fieldFilterIndex={i}
+            filterIndex={i}
             type={"Intermediate"}
             fields={["text", "order"]}
             filters={filters}
             setFilters={setFilters}
+            sorts={sorts}
+            setSorts={setSorts}
+            searches={searches}
+            setSearches={setSearches}
+            limit={limit}
+            setLimit={setLimit}
+
           />
         ))}
         <Flex pt="10px">

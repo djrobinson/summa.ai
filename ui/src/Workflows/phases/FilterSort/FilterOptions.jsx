@@ -35,8 +35,21 @@ const sortTypes = {
   Descending: {},
 };
 
-const createFilters = (filters, key, value, field, index) => {
 
+const createSorts = (sorts, key, value, index) => {
+  const newArray = [...sorts];
+  if (isEmpty(newArray[index])) {
+    newArray[index] = {};
+  }
+  newArray[index] = {
+    ...newArray[index],
+    [key]: value,
+  };
+  return newArray;
+}
+
+// The +1 is coupled to the prepopulated filter for the Phase ID!
+const createFilters = (filters, key, value, field, index) => {
   const newArray = [...filters[field]];
   newArray[index + 1] = {
     ...newArray[index + 1],
@@ -49,11 +62,17 @@ const createFilters = (filters, key, value, field, index) => {
 };
 
 const FilterOptions = ({
-  fieldFilterIndex,
+  filterIndex,
   type,
   fields,
   filters,
+  sorts,
+  searches,
+  limit,
   setFilters,
+  setSorts,
+  setSearches,
+  setLimit
 }) => {
   const [selectedType, setSelectedType] = React.useState(null); // [type, setSelectedType] = useState(null)
   const [topPath, setTopPath] = React.useState(null);
@@ -82,7 +101,7 @@ const FilterOptions = ({
                 "operator",
                 e.target.value,
                 type,
-                fieldFilterIndex
+                filterIndex
               );
               setFilters(newFilters);
             }}
@@ -100,7 +119,7 @@ const FilterOptions = ({
                 "path",
                 e.target.value,
                 type,
-                fieldFilterIndex
+                filterIndex
               );
               setFilters(newFilters);
               setTopPath(e.target.value);
@@ -120,7 +139,7 @@ const FilterOptions = ({
                 "valueText",
                 e.target.value,
                 type,
-                fieldFilterIndex
+                filterIndex
               );
               setFilters(newFilters);
             }}
@@ -138,7 +157,7 @@ const FilterOptions = ({
                 "path",
                 e.target.value,
                 type,
-                fieldFilterIndex
+                filterIndex
               );
               setFilters(newFilters);
               setTopPath(e.target.value);
@@ -158,7 +177,7 @@ const FilterOptions = ({
                 "valueText",
                 e.target.value,
                 type,
-                fieldFilterIndex
+                filterIndex
               );
               setFilters(newFilters);
             }}
@@ -171,14 +190,8 @@ const FilterOptions = ({
           <Select
             placeholder="Select a field to sort"
             onChange={(e) => {
-              const newFilters = createFilters(
-                filters,
-                "path",
-                e.target.value,
-                type,
-                fieldFilterIndex
-              );
-              setFilters(newFilters);
+              const newSorts = createSorts(sorts, "path", e.target.value, filterIndex);
+              setSorts(newSorts)
               setTopPath(e.target.value);
             }}
             value={topPath}
@@ -188,21 +201,15 @@ const FilterOptions = ({
             ))}
           </Select>
           <Select
-            placeholder="Direction"
+            placeholder="Order"
             onChange={(e) => {
-              const newFilters = createFilters(
-                filters,
-                "path",
-                e.target.value,
-                type,
-                fieldFilterIndex
-              );
-              setFilters(newFilters);
+              const newSorts = createSorts(sorts, "order", e.target.value, filterIndex);
+              setSorts(newSorts)
               setTopPath(e.target.value);
             }}
             value={topPath}
           >
-            {fields.map((k) => (
+            {['asc', 'desc'].map((k) => (
               <option value={k}>{k}</option>
             ))}
           </Select>
@@ -210,20 +217,13 @@ const FilterOptions = ({
       )}
       {selectedType === 'Limit' && (
         <>
-
           <Input
             placeholder="Limit"
             onChange={(e) => {
-              const newFilters = createFilters(
-                filters,
-                "valueText",
-                e.target.value,
-                type,
-                fieldFilterIndex
-              );
-              setFilters(newFilters);
+              
+              setLimit(e.target.value);
             }}
-            value={filters.valueText}
+            value={limit}
           />
         </>
       )}
