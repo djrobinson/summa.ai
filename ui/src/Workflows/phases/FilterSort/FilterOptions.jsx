@@ -138,6 +138,105 @@ const FilterOptions = ({
           />
         </>
       )}
+      {type === 'Search' && (
+        <>
+          <Select
+            placeholder="Select a field to search"
+            onChange={(e) => {
+              const newFilters = createFilters(
+                filters,
+                "path",
+                e.target.value,
+                field,
+                fieldFilterIndex
+              );
+              setFilters(newFilters);
+              setTopPath(e.target.value);
+            }}
+            value={topPath}
+          >
+            {fields.map((k) => (
+              <option value={k}>{k}</option>
+            ))}
+          </Select>
+
+          <Input
+            placeholder="Value"
+            onChange={(e) => {
+              const newFilters = createFilters(
+                filters,
+                "valueText",
+                e.target.value,
+                field,
+                fieldFilterIndex
+              );
+              setFilters(newFilters);
+            }}
+            value={filters.valueText}
+          />
+        </>
+      )}
+      {type === 'Sort' && (
+        <>
+          <Select
+            placeholder="Select a field to sort"
+            onChange={(e) => {
+              const newFilters = createFilters(
+                filters,
+                "path",
+                e.target.value,
+                field,
+                fieldFilterIndex
+              );
+              setFilters(newFilters);
+              setTopPath(e.target.value);
+            }}
+            value={topPath}
+          >
+            {fields.map((k) => (
+              <option value={k}>{k}</option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Direction"
+            onChange={(e) => {
+              const newFilters = createFilters(
+                filters,
+                "path",
+                e.target.value,
+                field,
+                fieldFilterIndex
+              );
+              setFilters(newFilters);
+              setTopPath(e.target.value);
+            }}
+            value={topPath}
+          >
+            {fields.map((k) => (
+              <option value={k}>{k}</option>
+            ))}
+          </Select>
+        </>
+      )}
+      {type === 'Limit' && (
+        <>
+
+          <Input
+            placeholder="Limit"
+            onChange={(e) => {
+              const newFilters = createFilters(
+                filters,
+                "valueText",
+                e.target.value,
+                field,
+                fieldFilterIndex
+              );
+              setFilters(newFilters);
+            }}
+            value={filters.valueText}
+          />
+        </>
+      )}
     </Flex>
   );
 };

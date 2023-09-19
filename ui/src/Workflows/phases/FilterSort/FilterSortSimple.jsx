@@ -66,11 +66,20 @@ const FilterSortSimple = ({
   phase,
   prevPhaseID,
   fields = {
-    Intermediate: { type: "Intermediate", properties: ["text"] },
+    Phase: { type: "Phase", properties: ["title", "intermediates"] },
+    "Phase.intermediates": { type: "Intermediate", properties: ["text"]}
   },
 }) => {
   const [fieldFilterIndex, setFieldFilterIndex] = React.useState(0); // 1 because we always want to have at least one filter
-  const [filters, setFilters] = React.useState({});
+  const [filters, setFilters] = React.useState({
+    Phase: [
+      {
+        path: ["id"],
+        operator: 'Equal',
+        valueText: prevPhaseID,
+      },
+    ],
+  });
   // TODO: CREATE DIFFERENT INPUTS FOR EACH TYPE IN FILTEROPTIONS.JSX AND SET THESE ACCORDINGLY
   const [searches, setSearches] = React.useState({});
   const [sorts, setSorts] = React.useState([]);
@@ -105,7 +114,7 @@ const FilterSortSimple = ({
     );
     finalString = finalContexts.join("\n");
   }
-  const intermediates = data && !isEmpty(data.Get["Phase"]) ? data.Get["Phase"][0].intermediates : [];
+  const intermediates = data && !isEmpty(data.Get["Phase"]) && data.Get["Phase"][0].intermediates ? data.Get["Phase"][0].intermediates : [];
   
   return (
     <Box w="600px">
@@ -116,7 +125,7 @@ const FilterSortSimple = ({
         {[...Array(fieldFilterIndex)].map((item, i) => (
           <FilterOptions
             fieldFilterIndex={i}
-            field={"Intermediate"}
+            field={"Phase"}
             fields={["text", "order"]}
             filters={filters}
             setFilters={setFilters}
