@@ -18,3 +18,11 @@ functions:
         path: /fileupload
         method: post
         cors: true
+  read:
+    handler: read.handler
+    timeout: 30
+    events:
+    - http:
+        path: /readfile
+        method: post
+        cors: true

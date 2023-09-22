@@ -70,9 +70,10 @@ const SplitStrategy = ({ setSentenceCount, setSplitChar, splitChar }) => {
 };
 
 const createBatch = async (splitSections, dataSourceID) => {
-  const intermediates = splitSections.map((s) => {
+  const intermediates = splitSections.map((s, i) => {
     return {
       text: s,
+      order: i + 1
     };
   });
   const batches = [];

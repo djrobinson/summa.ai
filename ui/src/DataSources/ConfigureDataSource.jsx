@@ -25,7 +25,7 @@ import {
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
 import { isValidLength } from "../utils/tokenHelpers";
-import SplitWizard from "./SplitWizard";
+import DataSourceSplitWizard from "./DataSourceSplitWizard";
 import SourceSelector from "./SourceSelector";
 import ConfirmDataSource from "./ConfirmDataSource";
 
@@ -59,7 +59,7 @@ const ConfigureDataSource = ({ uuid, setShowConfigure, setDsID }) => {
         setShowConfigure={setShowConfigure}
         setDsID={setDsID}
       />
-      <SplitWizard dataSourceID={uuid} inputText={pasted} />
+      <DataSourceSplitWizard dataSourceID={uuid} inputText={pasted} />
       <ConfirmDataSource dataSourceID={uuid} />
     </Flex>
   );

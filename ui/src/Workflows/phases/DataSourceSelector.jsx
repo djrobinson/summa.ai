@@ -82,10 +82,12 @@ const createPhaseVersion = async (workflowID, dataSource, intermediates) => {
     phase.id,
     "workflow"
   );
+  return true;
 };
 
-const DataSourceSelector = ({ id }) => {
+const DataSourceSelector = ({ id, refreshParent }) => {
   const [dataSource, setDataSource] = React.useState("");
+  const [isCreating, setIsCreating] = React.useState(false);
   const { data, error, loading } = useQuery(FETCH_DATA_SOURCES);
   const [
     fetchDataSources,
@@ -144,8 +146,12 @@ const DataSourceSelector = ({ id }) => {
           colorScheme="teal"
           rounded={"full"}
           flex={"1 0 auto"}
-          onClick={() => {
-            createPhaseVersion(id, dataSource, intermediates);
+          isDisabled={isCreating}
+          onClick={async () => {
+            setIsCreating(true)
+            await createPhaseVersion(id, dataSource, intermediates);
+            console.log("Refreshing parent")
+            refreshParent()
           }}
         >
           Use Data Source

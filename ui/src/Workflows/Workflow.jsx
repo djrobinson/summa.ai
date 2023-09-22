@@ -1,25 +1,15 @@
 import React from "react";
 
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import {
-  Wrap,
-  Flex,
-  Box,
-  Heading,
-  Text,
-  useColorModeValue,
-  Button,
-  Input,
-  FormLabel,
-  Center,
-  Select,
-} from "@chakra-ui/react";
+
 import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import Checkmark from "../components/Checkmark";
 import { useParams } from "react-router-dom";
 import DataSourceSelector from "./phases/DataSourceSelector";
 import Phases from "./Phases";
+import { useRecoilState } from "recoil";
+import { showRequestManagerState } from "../recoil/atoms";
 
 const FETCH_WORKFLOWS = gql`
   query GetWorkflow($id: String!) {
@@ -45,9 +35,13 @@ const FETCH_WORKFLOWS = gql`
 `;
 const Workflow = ({}) => {
   const { id } = useParams();
-  const { data, error, loading } = useQuery(FETCH_WORKFLOWS, {
+  
+  const [fetchWorkflows, { data, error, loading }] = useLazyQuery(FETCH_WORKFLOWS, {
     variables: { id },
   });
+  React.useEffect(() => {
+    fetchWorkflows()
+  }, [])
   console.log("Workflow: ", data, error, loading);
   // If phases, then render them
   // if not, show DataSourceSelector
@@ -55,7 +49,7 @@ const Workflow = ({}) => {
   if (!isEmpty(phases)) {
     return <Phases phases={phases} workflowID={id} />;
   }
-  return <DataSourceSelector id={id} />;
+  return <DataSourceSelector id={id} refreshParent={fetchWorkflows} />;
 };
 
 export default Workflow;

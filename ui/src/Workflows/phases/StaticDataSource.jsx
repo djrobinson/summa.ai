@@ -19,11 +19,18 @@ import { isEmpty } from "lodash";
 import { useParams } from "react-router-dom";
 
 import IntermediatesPreview from "../../components/IntermediatesPreview";
+import { GET_INTERMEDIATES } from "./MultiPromptWizard";
 
-const StaticDataSource = ({ dsID, intermediates }) => {
+const StaticDataSource = ({ phaseID }) => {
+  const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
+    variables: {
+      id: phaseID,
+    },
+  });
+  const intermediates = !isEmpty(data) ? data.Get.Phase[0].intermediates : [];
   return (
     <Box>
-      <Text>{dsID}</Text>
+      <Text>Data Source</Text>
       <Box h="700px" overflowY={"scroll"}>
         <IntermediatesPreview intermediates={intermediates} />
       </Box>

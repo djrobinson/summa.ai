@@ -12,6 +12,8 @@ import {
   Stack,
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { requestState, requestsState } from "../recoil/atoms";
 
 const runPrompt = async (prompt) => {
   try {
@@ -76,62 +78,82 @@ const ProgressBar = ({ start, done = false }) => {
   );
 };
 
-const PromptRunner = ({ i, prompt, setCount }) => {
+const PromptRunner = ({ i, prompt, setCount, forceRunAll }) => {
   console.log(i, prompt, setCount);
+  const [request, setRequest] = useRecoilState(requestState(i, { id: i, type: 'PROMPT', data: prompt, status: 'PENDING'}));
   const start = Date.now();
-  const [result, setResult] = React.useState("");
   React.useEffect(() => {
-    const go = async () => {
-      try {
-        const res = await runPrompt(prompt);
-        setResult(res);
-      } catch (e) {
-        console.log("DIDNT WORK: ", e);
+    // TODO: CAN THIS BE MEMOIZED. NEED A GUARANTEE TO RUN ONCE
+    if (request.status === 'RUNNING') {
+      const go = async () => {
+        try {
+          const res = await runPrompt(prompt.prompt);
+          console.log("RES: ", res);
+          setResult(res);
+          setRequest(prevR => ({...prevR, status: 'DONE', result: res}));
+        } catch (e) {
+          console.log("DIDNT WORK: ", e);
+        }
+      };
+      go();
+    }},[prompt, request, setRequest])
+    React.useEffect(() => {
+      if (forceRunAll && request.status !== 'DONE') {
+        setRequest(prevR => ({...prevR, status: 'RUNNING'}));
       }
-    };
-    go();
-  }, [prompt]);
-
+    },[forceRunAll])
+  const [result, setResult] = React.useState("");
   return (
     <>
       <Text fontWeight="800">Prompt #{i + 1} Answers</Text>
       <Stack>
+        <Text>{request.id} {request.status}</Text>
         <Text>{result}</Text>
-        <ProgressBar start={start} done={!isEmpty(result)} />
+        {/* <ProgressBar start={start} done={!isEmpty(result)} /> */}
+        <Button onClick={() => {setRequest(prevR => ({...prevR, status: 'RUNNING'}))}}>Run </Button>
       </Stack>
     </>
   );
 };
 
-const RequestManager = ({
-  prompts = ["What is the capital of Ontario?", "What is the meaning of life?"],
-}) => {
+// const go = async () => {
+//   try {
+//     setRequestsInProgress({
+//       id: i,
+//       start: Date.now(),
+//       prompt: prompt,
+//       result: "",
+//       done: false
+//     })
+//     const res = await runPrompt(prompt);
+//     setResult(res);
+//   } catch (e) {
+//     console.log("DIDNT WORK: ", e);
+//   }
+// };
+
+
+const RequestManager = () => {
+  const [requests, setRequests] = useRecoilState(requestsState);
+  const [runAll, setRunAll] = React.useState(false);
   return (
     <Wrap>
       <Box
-        m="10px"
-        maxW={"400px"}
-        w={"95%"}
-        height={"400px"}
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        bg={useColorModeValue("white", "gray.900")}
-        boxShadow={"2xl"}
         rounded={"md"}
         p={6}
       >
-        <Heading>Active Requests</Heading>
-        {prompts.map((p, i) => (
-          <PromptRunner i={i} prompt={p} />
+        {requests.map((p, i) => (
+          <PromptRunner i={i} prompt={p} forceRunAll={runAll} />
         ))}
-
         <Flex justify="flex-end">
           <Button
-            onClick={() => {}}
+            onClick={() => { setRunAll(true)}}
             colorScheme="teal"
             alignSelf="end"
             mt="40px"
           >
-            Run
+            Run All
           </Button>
         </Flex>
       </Box>

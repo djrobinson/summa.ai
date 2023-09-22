@@ -23,20 +23,24 @@ import {
 import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { useParams } from "react-router-dom";
-import DataSourceSelector from "./phases/DataSourceSelector";
-import IntermediatesPreview from "../components/IntermediatesPreview";
 import StaticDataSource from "./phases/StaticDataSource";
 import Checkmark from "../components/Checkmark";
-import FilterSort from "./phases/FilterSort/FilterSortSimple";
+import FilterSort from "./phases/FilterSort/FilterSort";
 import MultiPromptWizard from "./phases/MultiPromptWizard";
 import { createPhase } from "../utils/weaviateServices";
+import CombineWizard from "./phases/CombineWizard";
+import SplitWizard from "./phases/SplitWizard";
 
 // PHASE RULES
-// The phases have 4 common properties
-// inputText - output text of prev.
-// prevId - will grab the prev weaviate intermediates
-// intermediates - resulting intermediates. Phase sets this. Indicates
-// outputText - text blob output. Meant for splitter, saved on s3.
+// The phases have 2 common properties
+// prevId - will grab the prev weaviate intermediates or s3 object
+// phaseID - will be used to name the weaviate intermediates or s3 object
+
+// top level is simply responsible for creation & display of phases
+// the phase will handle its own data & updates
+// opt for redundant fetches over complex state management
+
+// s3 objects will be named based on phase id. Shouldn't have to store this on the Phase
 
 const optionsBuilder = (phase) => {};
 
@@ -52,7 +56,10 @@ const Phases = ({ phases, workflowID }) => {
   const addPhase = async (p) => {
     const phaseId = await createPhase(workflowID, p);
     console.log("PRE PHASES: ", phases);
-    setInMemoryPhases([...inMemoryPhases, p]);
+    p._additional = { id: phaseId };
+    const newPhases = [...inMemoryPhases, {...p }]
+    console.log("POST PHASES: ", newPhases);
+    setInMemoryPhases(newPhases);
   };
   console.log('${allPs.join(",") ', allPs.join(","));
   const FETCH_PHASE_INTERMEDIATES = gql`
@@ -63,15 +70,6 @@ const Phases = ({ phases, workflowID }) => {
           id
         }
         type
-        selection
-        intermediates {
-          ... on Intermediate {
-            _additional {
-              id
-            }
-            text
-          }
-        }
       }
     }
   }
@@ -105,8 +103,7 @@ const Phases = ({ phases, workflowID }) => {
                 p={6}
               >
                 <StaticDataSource
-                  dsID={phase.selection}
-                  intermediates={phase.intermediates}
+                  phaseID={phase._additional.id}
                 />
               </Box>
               <Box>
@@ -140,7 +137,7 @@ const Phases = ({ phases, workflowID }) => {
             >
               <FilterSort
                 phase={phase}
-                prevPhaseID={phases[i - 1]._additional.id}
+                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
               />
             </Box>
           );
@@ -158,8 +155,46 @@ const Phases = ({ phases, workflowID }) => {
               p={6}
             >
               <MultiPromptWizard
-                phase={phase}
-                prevPhaseID={phases[i - 1]._additional.id}
+                phaseID={phase._additional.id}
+                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+              />
+            </Box>
+          );
+        }
+        if (phase.type === "COMBINE") {
+          elements.push(
+            <Box
+              m="10px"
+              w={"700px"}
+              height={"800px"}
+              // eslint-disable-next-line react-hooks/rules-of-hooks
+              bg={useColorModeValue("white", "gray.900")}
+              boxShadow={"2xl"}
+              rounded={"md"}
+              p={6}
+            >
+              <CombineWizard
+                phaseID={phase._additional.id}
+                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+              />
+            </Box>
+          );
+        }
+        if (phase.type === "SPLIT") {
+          elements.push(
+            <Box
+              m="10px"
+              w={"700px"}
+              height={"800px"}
+              // eslint-disable-next-line react-hooks/rules-of-hooks
+              bg={useColorModeValue("white", "gray.900")}
+              boxShadow={"2xl"}
+              rounded={"md"}
+              p={6}
+            >
+              <SplitWizard
+                phaseID={phase._additional.id}
+                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
               />
             </Box>
           );
@@ -168,7 +203,7 @@ const Phases = ({ phases, workflowID }) => {
           <Flex w="120px" h="800px" align="center" justify="center">
             <Stack>
               <Icon as={BsArrowRight} h="40px" w="120px" />
-              <Stack align="center" justify="center">
+              {/* <Stack align="center" justify="center">
                 <Icon
                   color="black"
                   as={GoGitBranch}
@@ -177,7 +212,7 @@ const Phases = ({ phases, workflowID }) => {
                   mt="80px"
                 />
                 <Text align="center">Split Workstream</Text>
-              </Stack>
+              </Stack> */}
             </Stack>
           </Flex>
         );

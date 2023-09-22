@@ -15,7 +15,7 @@ import {
   Input,
 } from "@chakra-ui/react";
 import { AddIcon } from "@chakra-ui/icons";
-import FilterOptions from "./FilterOptions";
+import FilterOptions from "./FilterSortOptions";
 
 const TypeFilters = ({ fields, field, type, types, filters, setFilters }) => {
   const [fieldFilterIndex, setFieldFilterIndex] = React.useState(0);

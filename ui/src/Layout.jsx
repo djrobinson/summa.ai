@@ -20,8 +20,19 @@ import {
   MenuDivider,
   MenuItem,
   MenuList,
+  DrawerBody,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerCloseButton,
+
+  Input,
+  Button
 } from "@chakra-ui/react";
+import {  HiArrowsUpDown } from "react-icons/hi2";
 import { FiMenu, FiBell, FiChevronDown } from "react-icons/fi";
+import { useRecoilState } from "recoil";
+import { showRequestManagerState,requestsState } from "./recoil/atoms";
+import RequestManager from "./RequestManager/RequestManager";
 
 const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
   return (
@@ -99,6 +110,8 @@ const NavItem = ({ icon, children, ...rest }) => {
 };
 
 const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
+  const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
+  
   return (
     <Flex
       ml={{ base: 0, md: 60 }}
@@ -133,7 +146,9 @@ const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
           size="lg"
           variant="ghost"
           aria-label="open menu"
-          icon={<FiBell />}
+          icon={<HiArrowsUpDown />}
+          onClick={() => {setShowRequests(!showRequests)}}
+
         />
         <Flex alignItems={"center"}>
           <Menu>
@@ -194,6 +209,8 @@ const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
 
 const Layout = ({ hideOptions = true }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [requests, setRequests] = useRecoilState(requestsState);
+  const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
 
   return (
     <Box minH="100vh" bg={useColorModeValue("gray.100", "gray.900")}>
@@ -219,6 +236,27 @@ const Layout = ({ hideOptions = true }) => {
         {/* Content */}
         <Outlet />
       </Box>
+      <Drawer
+        isOpen={showRequests}
+        placement='right'
+        onClose={() => {setShowRequests(false)}}
+      >
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Active Requests</DrawerHeader>
+
+          <DrawerBody>
+          <RequestManager />
+
+          </DrawerBody>
+
+          <DrawerFooter>
+            <Button variant='outline' mr={3} onClick={() => {setShowRequests(false)}}>
+              Exit
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </Box>
   );
 };

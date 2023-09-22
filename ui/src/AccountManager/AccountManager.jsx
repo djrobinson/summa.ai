@@ -14,12 +14,14 @@ import {
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
 import { useNavigate } from "react-router-dom";
+import { useRecoilState } from "recoil";
+import { apiKeyState } from "../recoil/atoms";
 
 const AccountManager = ({
     presetApiKey
 }) => {
 
-    const [apiKey, setApiKey] = React.useState(presetApiKey)
+    const [apiKey, setApiKey] = useRecoilState(apiKeyState)
     const navigate = useNavigate();
   return (
     <Wrap>

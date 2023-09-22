@@ -16,8 +16,12 @@ import {
 import { isValidLength } from "../../utils/tokenHelpers";
 import { gql, useQuery } from "@apollo/client";
 import { createObject, createRelationship } from "../../utils/weaviateServices";
+import IntermediatesPreview from "../../components/IntermediatesPreview";
+import { useRecoilState } from "recoil";
+import { requestsState } from "../../recoil/atoms";
 
-const GET_INTERMEDIATES = gql`
+
+export const GET_INTERMEDIATES = gql`
   query GetIntermediates($id: String!) {
     Get {
       Phase(where: { path: "id", operator: Equal, valueString: $id }) {
@@ -35,7 +39,6 @@ const GET_INTERMEDIATES = gql`
 `;
 
 const runPrompt = async (prompt, phaseID, contextID) => {
-  console.log("PHASE FOR CONNECT: ", phaseID);
   try {
     const requestOptions = {
       method: "POST",
@@ -49,7 +52,6 @@ const runPrompt = async (prompt, phaseID, contextID) => {
       requestOptions
     );
     const res = await response1.json();
-    console.log("What is res: ", res);
     if (!res.choices) {
       return "";
     }
@@ -82,18 +84,18 @@ const runPrompt = async (prompt, phaseID, contextID) => {
 const PromptRunner = ({ phaseID, i, prompt, contextID, setCount }) => {
   console.log(phaseID, i, prompt, contextID, setCount);
   const [result, setResult] = React.useState("");
-  React.useEffect(() => {
-    const go = async () => {
-      try {
-        const res = await runPrompt(prompt, phaseID, contextID);
-        setResult(res);
-        setCount((c) => c + 1);
-      } catch (e) {
-        console.log("DIDNT WORK: ", e);
-      }
-    };
-    go();
-  }, [prompt, phaseID, contextID, i, setCount]);
+  // React.useEffect(() => {
+  //   const go = async () => {
+  //     try {
+  //       const res = await runPrompt(prompt, phaseID, contextID);
+  //       setResult(res);
+  //       setCount((c) => c + 1);
+  //     } catch (e) {
+  //       console.log("DIDNT WORK: ", e);
+  //     }
+  //   };
+  //   go();
+  // }, [prompt, phaseID, contextID, i, setCount]);
   return (
     <>
       <Text fontWeight="800">Prompt #{i + 1} Answers</Text>
@@ -106,10 +108,10 @@ const PromptRunner = ({ phaseID, i, prompt, contextID, setCount }) => {
   );
 };
 
-const MemoizedPromptRunner = React.memo(PromptRunner);
 
 const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
   const [summarizingPrompt, setSummarizingPrompt] = React.useState("");
+  const [requests, setRequests] = useRecoilState(requestsState);
   const [step, setStep] = React.useState(0);
   const [count, setCount] = React.useState(1);
   const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
@@ -126,6 +128,7 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
       id: phaseID,
     },
   });
+  console.log('currData ', currData)
 
   let contexts = [];
   if (data && data.Get.Phase[0].intermediates) {
@@ -140,9 +143,10 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
     });
   }
   return (
-    <Box>
+    <Box w="600px">
       <Heading>Multi Prompt Wizard</Heading>
-      {step === 0 && (
+      {currData && currData.Get.Phase[0].intermediates && (
+        <IntermediatesPreview intermediates={currData.Get.Phase[0].intermediates} />)}
         <>
           <FormLabel>Summarizing Prompt:</FormLabel>
           <Textarea
@@ -166,20 +170,6 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
               })}
           </Box>
         </>
-      )}
-      {step === 1 &&
-        contexts
-          .slice(0, count)
-          .map((context, i) => (
-            <MemoizedPromptRunner
-              key={i}
-              i={i}
-              contextID={context._additional.id}
-              prompt={context.prompt}
-              setCount={setCount}
-              phaseID={phaseID}
-            />
-          ))}
       <Flex>
         <Button
           mt={"20px"}
@@ -187,7 +177,7 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
           rounded={"full"}
           flex={"1 0 auto"}
           onClick={() => {
-            setStep(1);
+            setRequests([...requests, ...contexts])
           }}
         >
           Run Prompts

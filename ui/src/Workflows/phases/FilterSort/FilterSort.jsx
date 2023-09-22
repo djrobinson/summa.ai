@@ -17,14 +17,17 @@ import FilterSortChoice from "./FilterSortChoice";
 import { gql, useLazyQuery, useQuery } from "@apollo/client";
 import { isValidLength } from "../../../utils/tokenHelpers";
 import IntermediatesPreview from "../../../components/IntermediatesPreview";
-import FilterOptions from "./FilterOptions";
+import FilterOptions from "./FilterSortOptions";
 import { AddIcon } from "@chakra-ui/icons";
+import { apiKeyState } from "../../../recoil/atoms";
+import { useRecoilValue } from "recoil";
 
 const go = async (phase, data, finalContexts, finalString, combine = false) => {
   if (!isEmpty(data) && !combine) {
     localStorage.setItem(phase._additional.id, finalString);
-    const restructured = finalContexts.map((c) => ({
+    const restructured = finalContexts.map((c, i) => ({
       text: c,
+      order: i+1
     }));
     console.log("phase._additional.id ", phase._additional.id);
     console.log("refactor restructured: ", restructured);
@@ -62,7 +65,7 @@ const go = async (phase, data, finalContexts, finalString, combine = false) => {
   }
 };
 
-const FilterSortSimple = ({
+const FilterSort = ({
   phase,
   prevPhaseID,
   fields = {
@@ -70,6 +73,7 @@ const FilterSortSimple = ({
     "Intermediate.phase": { type: "Phase", properties: ["title"]}
   },
 }) => {
+  const apiKey = useRecoilValue(apiKeyState)
   const [fieldFilterIndex, setFieldFilterIndex] = React.useState(0); // 1 because we always want to have at least one filter
   const [filters, setFilters] = React.useState({
     Intermediate: [
@@ -98,6 +102,11 @@ const FilterSortSimple = ({
       ${realQueryString}
     `,
     {
+      context: {
+        headers: {
+            "X-Openai-Api-Key": apiKey
+        }
+    },
       variables: {
         id: prevPhaseID,
       },
@@ -170,4 +179,4 @@ const FilterSortSimple = ({
   );
 };
 
-export default FilterSortSimple;
+export default FilterSort;
