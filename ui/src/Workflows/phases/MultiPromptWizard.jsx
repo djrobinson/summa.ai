@@ -17,8 +17,8 @@ import { isValidLength } from "../../utils/tokenHelpers";
 import { gql, useQuery } from "@apollo/client";
 import { createObject, createRelationship } from "../../utils/weaviateServices";
 import IntermediatesPreview from "../../components/IntermediatesPreview";
-import { useRecoilState } from "recoil";
-import { requestsState } from "../../recoil/atoms";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { requestState, requestsState } from "../../recoil/atoms";
 
 
 export const GET_INTERMEDIATES = gql`
@@ -38,72 +38,18 @@ export const GET_INTERMEDIATES = gql`
   }
 `;
 
-const runPrompt = async (prompt, phaseID, contextID) => {
-  try {
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt,
-      }),
-    };
-    const response1 = await fetch(
-      "https://kdcwpoii3h.execute-api.us-west-2.amazonaws.com/dev/chat",
-      requestOptions
-    );
-    const res = await response1.json();
-    if (!res.choices) {
-      return "";
-    }
-    const objRes = await createObject("Intermediate", {
-      text: res.choices[0].message.content,
-    });
-    await createRelationship(
-      "Phase",
-      phaseID,
-      "intermediates",
-      "Intermediate",
-      objRes.id,
-      "phase"
-    );
-    await createRelationship(
-      "Intermediate",
-      contextID,
-      "sourceFor",
-      "Intermediate",
-      objRes.id,
-      "source"
-    );
-    console.log("created rel for AI result");
-    return res.choices[0].message.content;
-  } catch (e) {
-    console.error("COULD NOT SEARCH: ", e);
-  }
-};
-
-const PromptRunner = ({ phaseID, i, prompt, contextID, setCount }) => {
-  console.log(phaseID, i, prompt, contextID, setCount);
-  const [result, setResult] = React.useState("");
-  // React.useEffect(() => {
-  //   const go = async () => {
-  //     try {
-  //       const res = await runPrompt(prompt, phaseID, contextID);
-  //       setResult(res);
-  //       setCount((c) => c + 1);
-  //     } catch (e) {
-  //       console.log("DIDNT WORK: ", e);
-  //     }
-  //   };
-  //   go();
-  // }, [prompt, phaseID, contextID, i, setCount]);
+const PromptResults = ({ phaseID, i }) => {
+  const request = useRecoilValue(requestState(phaseID + '-#' + i))
   return (
     <>
       <Text fontWeight="800">Prompt #{i + 1} Answers</Text>
-      <Wrap>
-        <WrapItem>
-          <Text>{result}</Text>
-        </WrapItem>
-      </Wrap>
+      <Stack>
+
+        <Text>{request.id}</Text>
+        <Text>{request.status}</Text>
+        <Text>{request.result}</Text>
+
+      </Stack>
     </>
   );
 };
@@ -112,8 +58,6 @@ const PromptRunner = ({ phaseID, i, prompt, contextID, setCount }) => {
 const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
   const [summarizingPrompt, setSummarizingPrompt] = React.useState("");
   const [requests, setRequests] = useRecoilState(requestsState);
-  const [step, setStep] = React.useState(0);
-  const [count, setCount] = React.useState(1);
   const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
     variables: {
       id: prevPhaseID,
@@ -132,11 +76,12 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
 
   let contexts = [];
   if (data && data.Get.Phase[0].intermediates) {
-    contexts = data.Get.Phase[0].intermediates.map((d) => {
+    contexts = data.Get.Phase[0].intermediates.map((d,i) => {
       const prompt = summarizingPrompt + "\n" + d.text;
       const md5Prompt = md5(prompt);
       return {
         ...d,
+        id: phaseID + "-#" + i,
         prompt: summarizingPrompt + "\n" + d.text,
         hash: md5Prompt,
       };
@@ -165,6 +110,7 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
                         {d.prompt}
                       </Text>
                     </Box>
+                    <PromptResults phaseID={phaseID} i={i} />
                   </Box>
                 );
               })}

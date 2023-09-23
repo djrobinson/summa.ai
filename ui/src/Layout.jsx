@@ -26,7 +26,8 @@ import {
   DrawerCloseButton,
 
   Input,
-  Button
+  Button,
+  Heading
 } from "@chakra-ui/react";
 import {  HiArrowsUpDown } from "react-icons/hi2";
 import { FiMenu, FiBell, FiChevronDown } from "react-icons/fi";
@@ -232,31 +233,19 @@ const Layout = ({ hideOptions = true }) => {
         </DrawerContent>
       </Drawer>
       <MobileNav onOpen={onOpen} hideOptions={hideOptions} />
-      <Box ml={{ base: 0, md: 60 }} p="4">
+      <Box pos="relative" ml={{ base: 0, md: 60 }} p="4">
         {/* Content */}
         <Outlet />
-      </Box>
-      <Drawer
-        isOpen={showRequests}
-        placement='right'
-        onClose={() => {setShowRequests(false)}}
-      >
-        <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>Active Requests</DrawerHeader>
-
-          <DrawerBody>
-          <RequestManager />
-
-          </DrawerBody>
-
-          <DrawerFooter>
-            <Button variant='outline' mr={3} onClick={() => {setShowRequests(false)}}>
+        <Box p="20px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: '100%', background: 'white'}}>
+          <Heading>Active Requests</Heading>
+          <RequestManager/>
+          <Button variant='outline' mr={3} onClick={() => {setShowRequests(false)}}>
               Exit
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          </Button>
+      </Box>
+      </Box>
+      
+      
     </Box>
   );
 };

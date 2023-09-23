@@ -15,50 +15,6 @@ import { isEmpty } from "lodash";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { requestState, requestsState } from "../recoil/atoms";
 
-const runPrompt = async (prompt) => {
-  try {
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt,
-      }),
-    };
-    const response1 = await fetch(
-      "https://kdcwpoii3h.execute-api.us-west-2.amazonaws.com/dev/chat",
-      requestOptions
-    );
-    const res = await response1.json();
-    console.log("What is res: ", res);
-    if (!res.choices) {
-      return "";
-    }
-    // const objRes = await createObject("Intermediate", {
-    //   text: res.choices[0].message.content,
-    // });
-    // await createRelationship(
-    //   "Phase",
-    //   phaseID,
-    //   "intermediates",
-    //   "Intermediate",
-    //   objRes.id,
-    //   "phase"
-    // );
-    // await createRelationship(
-    //   "Intermediate",
-    //   contextID,
-    //   "sourceFor",
-    //   "Intermediate",
-    //   objRes.id,
-    //   "source"
-    // );
-    // console.log("created rel for AI result");
-    return res.choices[0].message.content;
-  } catch (e) {
-    console.error("COULD NOT SEARCH: ", e);
-  }
-};
-
 const ProgressBar = ({ start, done = false }) => {
   const [time, setTime] = React.useState(0);
   React.useEffect(() => {
@@ -78,37 +34,15 @@ const ProgressBar = ({ start, done = false }) => {
   );
 };
 
-const PromptRunner = ({ i, prompt, setCount, forceRunAll }) => {
-  console.log(i, prompt, setCount);
-  const [request, setRequest] = useRecoilState(requestState(i, { id: i, type: 'PROMPT', data: prompt, status: 'PENDING'}));
-  const start = Date.now();
-  React.useEffect(() => {
-    // TODO: CAN THIS BE MEMOIZED. NEED A GUARANTEE TO RUN ONCE
-    if (request.status === 'RUNNING') {
-      const go = async () => {
-        try {
-          const res = await runPrompt(prompt.prompt);
-          console.log("RES: ", res);
-          setResult(res);
-          setRequest(prevR => ({...prevR, status: 'DONE', result: res}));
-        } catch (e) {
-          console.log("DIDNT WORK: ", e);
-        }
-      };
-      go();
-    }},[prompt, request, setRequest])
-    React.useEffect(() => {
-      if (forceRunAll && request.status !== 'DONE') {
-        setRequest(prevR => ({...prevR, status: 'RUNNING'}));
-      }
-    },[forceRunAll])
-  const [result, setResult] = React.useState("");
+const PromptRunner = ({ id, prompt, setCount, forceRunAll }) => {
+  console.log(id, prompt, setCount);
+  const [request, setRequest] = useRecoilState(requestState(id));
   return (
     <>
-      <Text fontWeight="800">Prompt #{i + 1} Answers</Text>
+      <Text fontWeight="800">Prompt #{id} Answers</Text>
       <Stack>
         <Text>{request.id} {request.status}</Text>
-        <Text>{result}</Text>
+        <Text>{request.result}</Text>
         {/* <ProgressBar start={start} done={!isEmpty(result)} /> */}
         <Button onClick={() => {setRequest(prevR => ({...prevR, status: 'RUNNING'}))}}>Run </Button>
       </Stack>
@@ -116,24 +50,9 @@ const PromptRunner = ({ i, prompt, setCount, forceRunAll }) => {
   );
 };
 
-// const go = async () => {
-//   try {
-//     setRequestsInProgress({
-//       id: i,
-//       start: Date.now(),
-//       prompt: prompt,
-//       result: "",
-//       done: false
-//     })
-//     const res = await runPrompt(prompt);
-//     setResult(res);
-//   } catch (e) {
-//     console.log("DIDNT WORK: ", e);
-//   }
-// };
-
 
 const RequestManager = () => {
+  console.log('RequestManager')
   const [requests, setRequests] = useRecoilState(requestsState);
   const [runAll, setRunAll] = React.useState(false);
   return (
@@ -144,7 +63,7 @@ const RequestManager = () => {
         p={6}
       >
         {requests.map((p, i) => (
-          <PromptRunner i={i} prompt={p} forceRunAll={runAll} />
+          <PromptRunner id={p.id} prompt={p.prompt} forceRunAll={runAll} />
         ))}
         <Flex justify="flex-end">
           <Button
