@@ -97,6 +97,7 @@ const createBatch = async (splitSections, dataSourceID) => {
   }
 };
 
+
 const SplitWizard = ({ inputText, dataSourceID }) => {
   const [splitSections, setSplitSections] = React.useState([]);
   const [sentenceCount, setSentenceCount] = React.useState(10);

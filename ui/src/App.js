@@ -16,6 +16,7 @@ import { apiKeyState } from "./recoil/atoms";
 
 export default function App() {
   const [apiKey, setApiKey] = useRecoilState(apiKeyState)
+
   const client = new ApolloClient({
     uri: "http://localhost:8080/v1/graphql",
     cache: new InMemoryCache(),

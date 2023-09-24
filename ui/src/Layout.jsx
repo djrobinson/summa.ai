@@ -20,20 +20,15 @@ import {
   MenuDivider,
   MenuItem,
   MenuList,
-  DrawerBody,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerCloseButton,
-
-  Input,
   Button,
   Heading
 } from "@chakra-ui/react";
-import {  HiArrowsUpDown } from "react-icons/hi2";
+
 import { FiMenu, FiBell, FiChevronDown } from "react-icons/fi";
 import { useRecoilState } from "recoil";
 import { showRequestManagerState,requestsState } from "./recoil/atoms";
 import RequestManager from "./RequestManager/RequestManager";
+import RequestsButton from "./RequestsButton";
 
 const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
   return (
@@ -143,14 +138,7 @@ const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
       </Text>
 
       <HStack spacing={{ base: "0", md: "6" }}>
-        <IconButton
-          size="lg"
-          variant="ghost"
-          aria-label="open menu"
-          icon={<HiArrowsUpDown />}
-          onClick={() => {setShowRequests(!showRequests)}}
-
-        />
+        <RequestsButton />
         <Flex alignItems={"center"}>
           <Menu>
             <MenuButton

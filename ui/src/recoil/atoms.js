@@ -1,4 +1,4 @@
-import { atom, atomFamily, selectorFamily } from "recoil";
+import { atom, atomFamily, selectorFamily, selector } from "recoil";
 
 export const apiKeyState = atom({
   key: 'apiKeyState', // unique ID (with respect to other atoms/selectors)
@@ -14,6 +14,11 @@ export const showRequestManagerState = atom({
   key: 'showRequestManagerState', // unique ID (with respect to other atoms/selectors)
   default: true, // default value (aka initial value)
 });
+
+export const runningTokenCountState = atom({
+  key: 'runningTokenCountState',
+  default: 0
+})
 
 const runPrompt = async (prompt) => {
   try {
@@ -72,6 +77,9 @@ export const requestState = atomFamily({
       }
       return { id: request.id, status: 'PENDING', data: request.prompt, result: null };
     },
+    set: (requestId) => ({ set, get }, newValue) => {
+      console.log("Running setter in atom selector!!!", newValue)
+    }
   }),
   effects: (requestId) => [
     ({ setSelf, onSet }) => {
@@ -93,4 +101,33 @@ export const requestState = atomFamily({
       })
     }
   ],
+});
+
+const getUnixNow = () => Math.floor(Date.now() / 1000);
+
+const clockEffect =
+  (interval) => ({setSelf, trigger}) => {
+    if (trigger === 'get') {
+      setSelf(getUnixNow());
+    }
+    const timer = setInterval(() => setSelf(getUnixNow()), interval);
+    return () => clearInterval(timer);
+  };
+
+/**
+ * Atom that contains the current unix timestamp
+ * Updates at the provided interval
+ */
+export const clockState = atomFamily({
+  key: 'clockState',
+  default: getUnixNow(),
+  effects: (interval) => [clockEffect(interval)],
+});
+
+export const pollerState = selector({
+  key: 'pollerState ',
+  get: ({get}) => {
+    get(clockState(1000));
+    return 'ay'
+  },
 });
