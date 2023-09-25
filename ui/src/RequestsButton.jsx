@@ -6,6 +6,9 @@ import React from "react";
 
 import {
   IconButton,
+  Badge,
+  Stack,
+  Text
 } from "@chakra-ui/react";
 
 import { useRecoilState, useRecoilValue } from "recoil";
@@ -24,14 +27,32 @@ const RequestsButton = () => {
         // run the next request.
     }, [poller, requests])
     return (
+        <>
+        <Stack align='center'>
         <IconButton
-            size="lg"
+            fontSize="30px"
             variant="ghost"
             aria-label="open menu"
             icon={<HiArrowsUpDown />}
             onClick={() => {setShowRequests(!showRequests)}}
 
         />
+        <Text mt='-3' fontSize="12px">LLM</Text>
+        <Text mt='-3' fontSize="12px">Requests</Text>
+        </Stack>
+        <Stack>
+        <Badge ml='1' colorScheme='green'>
+        30 Complete
+      </Badge>
+      <Badge ml='1' colorScheme='blue'>
+        10 In Progress
+      </Badge>
+      <Badge ml='1' colorScheme='red'>
+        0 Errors
+      </Badge>
+      </Stack>
+        
+        </>
     )
 }
 

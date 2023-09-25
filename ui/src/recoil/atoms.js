@@ -131,3 +131,49 @@ export const pollerState = selector({
     return 'ay'
   },
 });
+
+// export const alertsState = atom({
+//   key: 'alertsState',
+//   default: [{
+//     title: 'Alert 1',
+//     message: 'This is a message',
+//     type: 'success',
+//     id: '1',
+//   }],
+// });
+
+export const alertsState = selector({
+  key: 'alertsState ',
+  get: ({get}) => {
+    const requests = get(requestsState);
+    const allAlerts = []
+    // Note, RUNNING is for testing only. Alerts should only apply to done or err
+    const clearedAlerts = get(clearedAlertsState);
+    for (const request of requests) {
+      const r = get(requestState(request.id));
+      if (r.status === 'RUNNING') {
+        allAlerts.push({
+          title: `Request ${r.id} is pending`,
+          message: 'This is a message',
+          type: 'info',
+          id: request.id,
+        })
+      }
+      if (r.status === 'DONE' && clearedAlerts.indexOf(request.id) === -1) {
+        const r = get(requestState(request.id));
+        allAlerts.push({
+          title: `Request ${r.id} is done`,
+          message: 'This is a message',
+          type: 'success',
+          id: request.id,
+        })
+      }
+    }
+    return allAlerts
+  },
+});
+
+export const clearedAlertsState = atom({
+  key: 'clearedAlertsState', // unique ID (with respect to other atoms/selectors)
+  default: [], // default value (aka initial value)
+});

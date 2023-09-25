@@ -21,7 +21,10 @@ import {
   MenuItem,
   MenuList,
   Button,
-  Heading
+  Heading,
+  Stack,
+  Alert,
+  AlertIcon
 } from "@chakra-ui/react";
 
 import { FiMenu, FiBell, FiChevronDown } from "react-icons/fi";
@@ -29,6 +32,7 @@ import { useRecoilState } from "recoil";
 import { showRequestManagerState,requestsState } from "./recoil/atoms";
 import RequestManager from "./RequestManager/RequestManager";
 import RequestsButton from "./RequestsButton";
+import Alerts from "./Alerts";
 
 const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
   return (
@@ -222,6 +226,7 @@ const Layout = ({ hideOptions = true }) => {
       </Drawer>
       <MobileNav onOpen={onOpen} hideOptions={hideOptions} />
       <Box pos="relative" ml={{ base: 0, md: 60 }} p="4">
+        <Alerts />
         {/* Content */}
         <Outlet />
         <Box p="20px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: '100%', background: 'white'}}>
