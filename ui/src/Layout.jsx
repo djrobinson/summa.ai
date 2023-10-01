@@ -202,7 +202,6 @@ const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
 
 const Layout = ({ hideOptions = true }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [requests, setRequests] = useRecoilState(requestsState);
   const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
 
   return (
@@ -229,8 +228,8 @@ const Layout = ({ hideOptions = true }) => {
         <Alerts />
         {/* Content */}
         <Outlet />
-        <Box p="20px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: '100%', background: 'white'}}>
-          <Heading>Active Requests</Heading>
+        <Box p="20px" w="400px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: 'calc(100vh - 80px)', background: 'white'}}>
+          <Text>Active Requests</Text>
           <RequestManager/>
           <Button variant='outline' mr={3} onClick={() => {setShowRequests(false)}}>
               Exit

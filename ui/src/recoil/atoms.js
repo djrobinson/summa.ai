@@ -1,18 +1,17 @@
 import { atom, atomFamily, selectorFamily, selector } from "recoil";
+import { getTokenCount } from "../utils/tokenHelpers";
+import { getUnixNow } from "../utils/timeUtils";
 
 export const apiKeyState = atom({
-  key: 'apiKeyState', // unique ID (with respect to other atoms/selectors)
-  default: '', // default value (aka initial value)
+  key: 'apiKeyState', 
+  default: '',
 });
 
-export const requestsState = atom({
-  key: 'requestsState', // unique ID (with respect to other atoms/selectors)
-  default: [], // default value (aka initial value)
-});
+
 
 export const showRequestManagerState = atom({
-  key: 'showRequestManagerState', // unique ID (with respect to other atoms/selectors)
-  default: true, // default value (aka initial value)
+  key: 'showRequestManagerState', 
+  default: true,
 });
 
 export const runningTokenCountState = atom({
@@ -64,8 +63,79 @@ const runPrompt = async (prompt) => {
   }
 };
 
+// Requests will maintain a list of prompts to run, but not their current status
+// Current status will be maintained in the requestState atom along with the result
+// Sample:
+// {
+//   title: 'Request 1',
+//   prompt: 'This is a message',
+//   id: '1',
+// }
+export const requestsState = atom({
+  key: 'requestsState', 
+  default: [{
+    title: 'Alert 1',
+    prompt: 'This is a message',
+    id: '1',
+  }],
+});
+
+export const pendingRequestsState = selector({
+  key: 'pendingRequestsState',
+  get: ({get}) => {
+    const requests = get(requestsState);
+    return requests.filter(r => get(requestState(r.id)).status === 'PENDING')
+  },
+  default: [],
+});
+
+export const runningRequestsState = selector({
+  key: 'runningRequestsState',
+  get: ({get}) => {
+    const requests = get(requestsState);
+    return requests.filter(r => get(requestState(r.id)).status === 'RUNNING')
+  },
+  default: [],
+});
+
+export const doneRequestsState = selector({
+  key: 'doneRequestsState',
+  get: ({get}) => {
+    const requests = get(requestsState);
+    return requests.filter(r => get(requestState(r.id)).status === 'DONE')
+  },
+  default: [],
+});
+
+export const erroredRequestsState = selector({
+  key: 'erroredRequestsState',
+  get: ({get}) => {
+    const requests = get(requestsState);
+    return requests.filter(r => get(requestState(r.id)).status === 'ERROR')
+  },
+  default: [],
+});
+
+export const allRequestStatuses = selector({
+  key: 'allRequestStatuses',
+  get: ({get}) => {
+    const requests = get(requestsState);
+    const lastMinute = requests.map(r => get(requestState(r.id)))
+    return lastMinute
+  },
+  default: []
+})
+
+export const rateLimitState = atom({
+  key: 'rateLimitState',
+  default: 8192,
+})
+
+
+// Requeststate will copy all requestsState, adding in PENDING for new requests
+// This will actually run the prompt and update the status to DONE/ERROR
 export const requestState = atomFamily({
-  key: 'requestState', // unique ID (with respect to other atoms/selectors)
+  key: 'requestState', 
   default: selectorFamily({
     key: 'requestStateDefault',
     get: (requestId) => ({ get }) => {
@@ -75,11 +145,8 @@ export const requestState = atomFamily({
       if (!request) {
         return {};
       }
-      return { id: request.id, status: 'PENDING', data: request.prompt, result: null };
+      return { id: request.id, status: 'PENDING', data: request.prompt, result: null, start: null, end: null };
     },
-    set: (requestId) => ({ set, get }, newValue) => {
-      console.log("Running setter in atom selector!!!", newValue)
-    }
   }),
   effects: (requestId) => [
     ({ setSelf, onSet }) => {
@@ -91,7 +158,7 @@ export const requestState = atomFamily({
             try {
               const res = await runPrompt(newValue.data);
               console.log("RES: ", res);
-              setSelf(prevR => ({...prevR, status: 'DONE', result: res}));
+              setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res}));
             } catch (e) {
               console.log("DIDNT WORK: ", e);
             }
@@ -103,7 +170,6 @@ export const requestState = atomFamily({
   ],
 });
 
-const getUnixNow = () => Math.floor(Date.now() / 1000);
 
 const clockEffect =
   (interval) => ({setSelf, trigger}) => {
@@ -124,23 +190,7 @@ export const clockState = atomFamily({
   effects: (interval) => [clockEffect(interval)],
 });
 
-export const pollerState = selector({
-  key: 'pollerState ',
-  get: ({get}) => {
-    get(clockState(1000));
-    return 'ay'
-  },
-});
 
-// export const alertsState = atom({
-//   key: 'alertsState',
-//   default: [{
-//     title: 'Alert 1',
-//     message: 'This is a message',
-//     type: 'success',
-//     id: '1',
-//   }],
-// });
 
 export const alertsState = selector({
   key: 'alertsState ',
@@ -171,9 +221,15 @@ export const alertsState = selector({
     }
     return allAlerts
   },
+  default: [{
+    title: 'Alert 1',
+    message: 'This is a message',
+    type: 'success',
+    id: '1',
+  }],
 });
 
 export const clearedAlertsState = atom({
-  key: 'clearedAlertsState', // unique ID (with respect to other atoms/selectors)
-  default: [], // default value (aka initial value)
+  key: 'clearedAlertsState', 
+  default: [],
 });

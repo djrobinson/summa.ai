@@ -10,60 +10,30 @@ import {
   Button,
   Progress,
   Stack,
+  Input,
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { requestState, requestsState } from "../recoil/atoms";
+import { rateLimitState, requestState, requestsState } from "../recoil/atoms";
+import PromptControls from "./PromptControls";
 
-const ProgressBar = ({ start, done = false }) => {
-  const [time, setTime] = React.useState(0);
-  React.useEffect(() => {
-    const interval = setInterval(() => setTime(Date.now() - start), 1000);
-
-    return () => clearInterval(interval);
-  }, [start]);
-  return (
-    <>
-      <Text>{time}</Text>
-      <Progress
-        mt="20px"
-        hasStripe
-        value={done ? 100 : (time / 1000 / 30) * 100}
-      />
-    </>
-  );
-};
-
-const PromptRunner = ({ id, prompt, setCount, forceRunAll }) => {
-  console.log(id, prompt, setCount);
-  const [request, setRequest] = useRecoilState(requestState(id));
-  return (
-    <>
-      <Text fontWeight="800">Prompt #{id} Answers</Text>
-      <Stack>
-        <Text>{request.id} {request.status}</Text>
-        <Text>{request.result}</Text>
-        {/* <ProgressBar start={start} done={!isEmpty(result)} /> */}
-        <Button onClick={() => {setRequest(prevR => ({...prevR, status: 'RUNNING'}))}}>Run </Button>
-      </Stack>
-    </>
-  );
-};
 
 
 const RequestManager = () => {
   console.log('RequestManager')
   const [requests, setRequests] = useRecoilState(requestsState);
+  const [rateLimit, setRateLimit] = useRecoilState(rateLimitState)
   const [runAll, setRunAll] = React.useState(false);
   return (
-    <Wrap>
+    <Stack>
       <Box
         // eslint-disable-next-line react-hooks/rules-of-hooks
         rounded={"md"}
         p={6}
       >
+        <Input placeholder="Token Rate Limit (tokens/min)" value={rateLimit} onChange={(e)=> {setRateLimit(e.target.value)}}/>
         {requests.map((p, i) => (
-          <PromptRunner id={p.id} prompt={p.prompt} forceRunAll={runAll} />
+          <PromptControls id={p.id} prompt={p.prompt} forceRunAll={runAll} />
         ))}
         <Flex justify="flex-end">
           <Button
@@ -76,7 +46,7 @@ const RequestManager = () => {
           </Button>
         </Flex>
       </Box>
-    </Wrap>
+    </Stack>
   );
 };
 
