@@ -11,42 +11,75 @@ import {
   Progress,
   Stack,
   Input,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  FormLabel,
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { rateLimitState, requestState, requestsState } from "../recoil/atoms";
+import { allRequestStatuses, doneRequestsState, erroredRequestsState, pendingRequestsState, rateLimitState, requestState, requestsState, runningRequestsState } from "../recoil/atoms";
 import PromptControls from "./PromptControls";
 
 
 
 const RequestManager = () => {
   console.log('RequestManager')
-  const [requests, setRequests] = useRecoilState(requestsState);
   const [rateLimit, setRateLimit] = useRecoilState(rateLimitState)
-  const [runAll, setRunAll] = React.useState(false);
+  const all = useRecoilValue(allRequestStatuses)
+  const dones = useRecoilValue(doneRequestsState);
+  const pendings = useRecoilValue(pendingRequestsState)
+  const runs = useRecoilValue(runningRequestsState)
+  const errors = useRecoilValue(erroredRequestsState)
+  console.log('DEEZ: ', pendings, runs, dones, errors)
   return (
-    <Stack>
+
       <Box
         // eslint-disable-next-line react-hooks/rules-of-hooks
         rounded={"md"}
-        p={6}
       >
+        <Heading align="center" fontSize="20px" pb="20px">Active Requests</Heading>
+        <FormLabel fontSize="12px" fontWeight="800">Rate Limit</FormLabel>
         <Input placeholder="Token Rate Limit (tokens/min)" value={rateLimit} onChange={(e)=> {setRateLimit(e.target.value)}}/>
-        {requests.map((p, i) => (
-          <PromptControls id={p.id} prompt={p.prompt} forceRunAll={runAll} />
-        ))}
-        <Flex justify="flex-end">
-          <Button
-            onClick={() => { setRunAll(true)}}
-            colorScheme="teal"
-            alignSelf="end"
-            mt="40px"
-          >
-            Run All
-          </Button>
-        </Flex>
+        <Tabs align="center">
+          <TabList>
+            <Tab>All</Tab>
+            <Tab>Running</Tab>
+            <Tab>Pending</Tab>
+            <Tab>Done</Tab>
+            <Tab>Error</Tab>
+          </TabList>
+          <TabPanels align="start" h={"full"}>
+            <TabPanel h={"full"}>
+              {all.map((p, i) => (
+                <PromptControls id={p.id} prompt={p.prompt} />
+              ))}
+            </TabPanel>
+            <TabPanel h={"full"}>
+              {runs.map((p, i) => (
+                <PromptControls id={p.id} prompt={p.prompt} />
+              ))}
+            </TabPanel>
+            <TabPanel h={"full"}>
+              {pendings.map((p, i) => (
+                <PromptControls id={p.id} prompt={p.prompt} />
+              ))}
+            </TabPanel>
+            <TabPanel h={"full"}>
+              {dones.map((p, i) => (
+                <PromptControls id={p.id} prompt={p.prompt} />
+              ))}
+            </TabPanel>
+            <TabPanel h={"full"}>
+              {errors.map((p, i) => (
+                <PromptControls id={p.id} prompt={p.prompt} />
+              ))}
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Box>
-    </Stack>
   );
 };
 

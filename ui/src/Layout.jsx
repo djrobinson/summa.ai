@@ -225,11 +225,11 @@ const Layout = ({ hideOptions = true }) => {
       </Drawer>
       <MobileNav onOpen={onOpen} hideOptions={hideOptions} />
       <Box pos="relative" ml={{ base: 0, md: 60 }} p="4">
-        <Alerts />
+        <Alerts w={showRequests ? "calc(98% - 400px)" : "98%"} />
         {/* Content */}
         <Outlet />
-        <Box p="20px" w="400px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: 'calc(100vh - 80px)', background: 'white'}}>
-          <Text>Active Requests</Text>
+        <Box p="20px" w="400px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: 'calc(100vh - 80px)', background: 'white', borderLeft: 'solid 1px lightgray'}}>
+          
           <RequestManager/>
           <Button variant='outline' mr={3} onClick={() => {setShowRequests(false)}}>
               Exit

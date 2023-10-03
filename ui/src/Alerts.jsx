@@ -47,7 +47,7 @@ const AlertRouter = ({ alert, close }) => {
     )
 }
 
-const Alerts = () => {
+const Alerts = ({ w = "98%" }) => {
     const alerts = useRecoilValue(alertsState)
     const [clearedAlerts, setClearedAlerts] = useRecoilState(clearedAlertsState)
     const [requests, setRequests] = useRecoilState(requestsState);
@@ -57,7 +57,7 @@ const Alerts = () => {
     }
   return (
 
-      <Stack pos="absolute" w="98%" spacing={3}>
+      <Stack pos="absolute" w={w} spacing={3}>
         {alerts.map((alert) => (
             <AlertRouter alert={alert} close={deleteAlert}  />
         ))}

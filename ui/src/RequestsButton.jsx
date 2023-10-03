@@ -8,14 +8,17 @@ import {
   IconButton,
   Badge,
   Stack,
-  Text
+  Text,
+  Button,
+  Box
 } from "@chakra-ui/react";
 
 import { useRecoilCallback, useRecoilState, useRecoilValue } from "recoil";
-import { showRequestManagerState, clockState, requestsState, allRequestStatuses, rateLimitState, requestState } from "./recoil/atoms";
+import { showRequestManagerState, clockState, allRequestStatuses, rateLimitState, requestState, pendingRequestsState, doneRequestsState, erroredRequestsState, runningRequestsState } from "./recoil/atoms";
 import { HiArrowsUpDown } from "react-icons/hi2";
 import { getUnixNow } from "./utils/timeUtils";
 import { getTokenCount } from "./utils/tokenHelpers";
+
 
 const RequestsButton = () => {
     const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
@@ -25,6 +28,10 @@ const RequestsButton = () => {
     const runPending = useRecoilCallback(({set}) => async (rid) => {
         set(requestState(rid), (oldR) => ({...oldR, status: 'RUNNING'}))
     })
+    const dones = useRecoilValue(doneRequestsState);
+    const pendings = useRecoilValue(pendingRequestsState)
+    const runs = useRecoilValue(runningRequestsState)
+    const errors = useRecoilValue(erroredRequestsState)
     React.useEffect(() => {
         const now = getUnixNow()
         const filteredRequests = allRequests.filter(r => now - r.start < 60)
@@ -38,39 +45,43 @@ const RequestsButton = () => {
         console.log("last min requests: ", filteredRequests.length)
         console.log("lastMinTokens: ", lastMinTokens)
         if (lastMinTokens <= rateLimit && pendingRequests.length > 0) {
-            
             console.log("SETTING TO ACTIVE!", pendingRequests)
-            pendingRequests.forEach(r => {
-                runPending(r.id)
-            })
+            // pendingRequests.forEach(r => {
+            //     runPending(r.id)
+            // })
         }
     }, [poller, allRequests, rateLimit, runPending])
     return (
         <>
         <Stack align='center'>
-        <IconButton
-            fontSize="30px"
-            variant="ghost"
-            aria-label="open menu"
-            icon={<HiArrowsUpDown />}
-            onClick={() => {setShowRequests(!showRequests)}}
+            <IconButton
+                variant="ghost"
+                fontSize="30px"
+                icon={<HiArrowsUpDown />}
+                onClick={() => {setShowRequests(!showRequests)}}
 
-        />
-        <Text mt='-3' fontSize="12px">LLM</Text>
-        <Text mt='-3' fontSize="12px">Requests</Text>
+            />
+            <Stack align="center" style={{ cursor: 'pointer' }} onClick={() => {setShowRequests(!showRequests)}}>
+                <Text mt='-3' fontSize="12px">LLM</Text>
+                <Text mt='-3' fontSize="12px">Requests</Text>
+            </Stack>
         </Stack>
         <Stack>
-        <Badge ml='1' colorScheme='green'>
-        30 Complete
-      </Badge>
-      <Badge ml='1' colorScheme='blue'>
-        10 In Progress
-      </Badge>
-      <Badge ml='1' colorScheme='red'>
-        0 Errors
-      </Badge>
-      </Stack>
-        
+            <Badge colorScheme='yellow'>
+                {pendings.length} Pending
+            </Badge>
+            <Badge colorScheme='blue'>
+                {runs.length} In Progress
+            </Badge>
+            </Stack>
+        <Stack>
+            <Badge  colorScheme='green'>
+                {dones.length} Complete
+            </Badge>
+            <Badge  colorScheme='red'>
+                {errors.length} Errors
+            </Badge>
+        </Stack>
         </>
     )
 }

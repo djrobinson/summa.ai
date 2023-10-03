@@ -84,7 +84,7 @@ export const pendingRequestsState = selector({
   key: 'pendingRequestsState',
   get: ({get}) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'PENDING')
+    return requests.filter(r => get(requestState(r.id)).status === 'PENDING').map(r =>  get(requestState(r.id)))
   },
   default: [],
 });
@@ -93,7 +93,7 @@ export const runningRequestsState = selector({
   key: 'runningRequestsState',
   get: ({get}) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'RUNNING')
+    return requests.filter(r => get(requestState(r.id)).status === 'RUNNING').map(r =>  get(requestState(r.id)))
   },
   default: [],
 });
@@ -102,7 +102,7 @@ export const doneRequestsState = selector({
   key: 'doneRequestsState',
   get: ({get}) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'DONE')
+    return requests.filter(r => get(requestState(r.id)).status === 'DONE').map(r =>  get(requestState(r.id)))
   },
   default: [],
 });
@@ -111,7 +111,7 @@ export const erroredRequestsState = selector({
   key: 'erroredRequestsState',
   get: ({get}) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'ERROR')
+    return requests.filter(r => get(requestState(r.id)).status === 'ERROR').map(r =>  get(requestState(r.id)))
   },
   default: [],
 });
@@ -120,8 +120,8 @@ export const allRequestStatuses = selector({
   key: 'allRequestStatuses',
   get: ({get}) => {
     const requests = get(requestsState);
-    const lastMinute = requests.map(r => get(requestState(r.id)))
-    return lastMinute
+    const all = requests.map(r => get(requestState(r.id)))
+    return all
   },
   default: []
 })
