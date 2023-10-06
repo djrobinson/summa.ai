@@ -22,35 +22,42 @@ import { getTokenCount } from "./utils/tokenHelpers";
 
 const RequestsButton = () => {
     const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
-    const allRequests = useRecoilValue(allRequestStatuses)
     const rateLimit = useRecoilValue(rateLimitState)
     const poller = useRecoilValue(clockState(2000))
     const runPending = useRecoilCallback(({set}) => async (rid) => {
-        set(requestState(rid), (oldR) => ({...oldR, status: 'RUNNING'}))
+        console.log('running ', rid)
+        set(requestState(rid), (oldR) => ({ ...oldR, status: 'RUNNING', start: getUnixNow() }))
     })
     const dones = useRecoilValue(doneRequestsState);
     const pendings = useRecoilValue(pendingRequestsState)
     const runs = useRecoilValue(runningRequestsState)
     const errors = useRecoilValue(erroredRequestsState)
+    
+    const all = useRecoilValue(allRequestStatuses)
+    
     React.useEffect(() => {
-        const now = getUnixNow()
-        const filteredRequests = allRequests.filter(r => now - r.start < 60)
-        const pendingRequests = allRequests.filter(r => r.status === 'PENDING')
-        console.log("allRequests: ", now, allRequests, filteredRequests)
-        const lastMinTokens = filteredRequests.reduce((acc, curr) => {
-            const tokens = getTokenCount(curr.data)
-            return acc + tokens
-        }, 0)
-        console.log("PENDING REQUESTS: ", pendingRequests)
-        console.log("last min requests: ", filteredRequests.length)
-        console.log("lastMinTokens: ", lastMinTokens)
-        if (lastMinTokens <= rateLimit && pendingRequests.length > 0) {
-            console.log("SETTING TO ACTIVE!", pendingRequests)
-            // pendingRequests.forEach(r => {
-            //     runPending(r.id)
-            // })
+        const nextUp = [];
+        const now = getUnixNow();
+        const lastMinute = now - 60;
+        const lastMinuteRequests = all.filter(r => r.start && r.start > lastMinute)
+        const lastMinTokens = lastMinuteRequests.reduce((acc, r) => acc + getTokenCount(r.prompt + ' ' + r.context), 0)
+        console.log('lastMinuteRequests ', all, lastMinuteRequests)
+        let limit = rateLimit - lastMinTokens
+        console.log('lastMinTokens ', lastMinTokens, rateLimit, limit, pendings)
+        pendings.forEach((p) => {
+            const tokens = getTokenCount(p.prompt + ' ' + p.context)
+            if (tokens < limit) {
+                nextUp.push(p)
+                limit = limit - tokens
+            }
+        })
+        if (nextUp.length) {
+            nextUp.forEach((p) => {
+                console.log("Wed run this: ", p)
+                runPending(p.id)
+            })
         }
-    }, [poller, allRequests, rateLimit, runPending])
+    }, [poller, all, rateLimit, pendings, runPending])
     return (
         <>
         <Stack align='center'>

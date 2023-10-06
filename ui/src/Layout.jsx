@@ -225,7 +225,7 @@ const Layout = ({ hideOptions = true }) => {
       </Drawer>
       <MobileNav onOpen={onOpen} hideOptions={hideOptions} />
       <Box pos="relative" ml={{ base: 0, md: 60 }} p="4">
-        <Alerts w={showRequests ? "calc(98% - 400px)" : "98%"} />
+        <Alerts w={showRequests ? "calc(98% - 400px)" : "98%"} zIndex={5} />
         {/* Content */}
         <Outlet />
         <Box p="20px" w="400px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: 'calc(100vh - 80px)', background: 'white', borderLeft: 'solid 1px lightgray'}}>

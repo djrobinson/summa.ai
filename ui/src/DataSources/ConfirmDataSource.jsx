@@ -77,7 +77,7 @@ const ConfirmDataSource = ({ setShowConfigure, setDsID, dataSourceID }) => {
           fontSize={"sm"}
           letterSpacing={1.1}
         >
-          Split your data into chunks
+          Preview your split
         </Text>
         <Flex p="40px" justify={"center"}>
           <Checkmark />

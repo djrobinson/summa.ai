@@ -26,14 +26,12 @@ import PromptControls from "./PromptControls";
 
 
 const RequestManager = () => {
-  console.log('RequestManager')
   const [rateLimit, setRateLimit] = useRecoilState(rateLimitState)
   const all = useRecoilValue(allRequestStatuses)
   const dones = useRecoilValue(doneRequestsState);
   const pendings = useRecoilValue(pendingRequestsState)
   const runs = useRecoilValue(runningRequestsState)
   const errors = useRecoilValue(erroredRequestsState)
-  console.log('DEEZ: ', pendings, runs, dones, errors)
   return (
 
       <Box

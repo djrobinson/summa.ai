@@ -19,6 +19,7 @@ import { createObject, createRelationship } from "../../utils/weaviateServices";
 import IntermediatesPreview from "../../components/IntermediatesPreview";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { requestState, requestsState } from "../../recoil/atoms";
+import PromptControls from "../../RequestManager/PromptControls";
 
 
 export const GET_INTERMEDIATES = gql`
@@ -58,6 +59,7 @@ const PromptResults = ({ phaseID, i }) => {
 const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
   const [summarizingPrompt, setSummarizingPrompt] = React.useState("");
   const [requests, setRequests] = useRecoilState(requestsState);
+  const [showManager, setShowManager] = React.useState(false);
   const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
     variables: {
       id: prevPhaseID,
@@ -77,21 +79,21 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
   let contexts = [];
   if (data && data.Get.Phase[0].intermediates) {
     contexts = data.Get.Phase[0].intermediates.map((d,i) => {
-      const prompt = summarizingPrompt + "\n" + d.text;
-      const md5Prompt = md5(prompt);
       return {
         ...d,
-        id: phaseID + "-#" + i,
-        prompt: summarizingPrompt + "\n" + d.text,
-        hash: md5Prompt,
+        id: d._additional.id,
+        prompt: summarizingPrompt,
+        context: d.text,
+        phaseID: phaseID,
       };
     });
   }
+  console.log("CONTEXTS: ", contexts);
   return (
     <Box w="600px">
       <Heading>Multi Prompt Wizard</Heading>
-      {currData && currData.Get.Phase[0].intermediates && (
-        <IntermediatesPreview intermediates={currData.Get.Phase[0].intermediates} />)}
+      {/* {currData && currData.Get.Phase[0].intermediates && (
+        <IntermediatesPreview intermediates={currData.Get.Phase[0].intermediates} />)} */}
         <>
           <FormLabel>Summarizing Prompt:</FormLabel>
           <Textarea
@@ -101,18 +103,25 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
           <Box h="530px" mt="10px" overflowY="scroll">
             {contexts &&
               contexts.slice(0, 100).map((d, i) => {
+                if (showManager) {
+
                 return (
                   <Box mt="20px">
-                    <Text fontWeight={"800"}>Prompt #{i + 1}</Text>
-
-                    <Box bg={"gray.800"} p="20px" overflowY="scroll">
-                      <Text key={i} color={"lime"}>
-                        {d.prompt}
-                      </Text>
-                    </Box>
-                    <PromptResults phaseID={phaseID} i={i} />
+                    <PromptControls id={d.id} prompt={d.prompt} />
                   </Box>
                 );
+                }
+                
+                return (
+                  <Box mt="20px">
+                  <Text fontWeight={"800"}>Prompt {i + 1} Preview</Text>
+                    <Box bg={"gray.800"} p="20px" overflowY="scroll">
+                      <Text key={i} color={"lime"}>
+                        {d.prompt} {d.context}
+                      </Text>
+                    </Box>
+                  </Box>
+                )
               })}
           </Box>
         </>
@@ -123,6 +132,7 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
           rounded={"full"}
           flex={"1 0 auto"}
           onClick={() => {
+            setShowManager(true)
             setRequests([...requests, ...contexts])
           }}
         >

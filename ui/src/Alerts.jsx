@@ -28,7 +28,7 @@ const AlertRouter = ({ alert, close }) => {
     const message = alert.message;
     const id = alert.id;
     return (
-        <Alert status={type} >
+        <Alert status={type} zIndex={10} >
           <AlertIcon />
             <Box w="full">
 

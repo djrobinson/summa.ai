@@ -61,8 +61,10 @@ const SplitStrategy = ({ setSentenceCount, setSplitChar, splitChar }) => {
       </Flex>
       <RadioGroup pt="20px" onChange={(e) => setSplitChar(e)} value={splitChar}>
         <Stack direction="column">
-          <Radio value=" ">Space</Radio>
-          <Radio value="">Character</Radio>
+          <Radio value="WORD">Word</Radio>
+          <Radio value="CHARACTER">Character</Radio>
+          <Radio value="NEW_LINE">New Line</Radio>
+          <Radio value="DOUBLE_NEW_LINE">Double New Line</Radio>
         </Stack>
       </RadioGroup>
     </Stack>
@@ -102,16 +104,29 @@ const SplitWizard = ({ inputText, dataSourceID }) => {
   const [splitSections, setSplitSections] = React.useState([]);
   const [sentenceCount, setSentenceCount] = React.useState(10);
   const [splitChar, setSplitChar] = React.useState(" ");
+  const DOUBLE_NEW_LINE = "\n\n";
+  const NEW_LINE = "\n";
+  const CHARACTER = "";
+  const WORD = " ";
   const runSplitSample = React.useCallback(() => {
-    // Max 10k chars for this
-    const splitText = inputText.split(splitChar);
+    let char = '';
+    if (splitChar === 'DOUBLE_NEW_LINE') {
+      char = DOUBLE_NEW_LINE;
+    } else if (splitChar === 'NEW_LINE') {
+      char = NEW_LINE;
+    } else if (splitChar === 'CHARACTER') {
+      char = CHARACTER;
+    } else if (splitChar === 'WORD') {
+      char = WORD;
+    }
+    const splitText = inputText.split(char);
     const grouped = [];
     let currString = "";
     let currCount = 0;
     // console.log("Running htis", splitText);
     splitText.forEach((st) => {
       currCount++;
-      currString += splitChar + st;
+      currString += char + st;
       if (currCount >= sentenceCount) {
         grouped.push(currString);
         currString = "";

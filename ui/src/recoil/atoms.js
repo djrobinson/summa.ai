@@ -1,6 +1,7 @@
 import { atom, atomFamily, selectorFamily, selector } from "recoil";
 import { getTokenCount } from "../utils/tokenHelpers";
 import { getUnixNow } from "../utils/timeUtils";
+import { createObject, createRelationship } from "../utils/weaviateServices";
 
 export const apiKeyState = atom({
   key: 'apiKeyState', 
@@ -11,7 +12,7 @@ export const apiKeyState = atom({
 
 export const showRequestManagerState = atom({
   key: 'showRequestManagerState', 
-  default: true,
+  default: false,
 });
 
 export const runningTokenCountState = atom({
@@ -19,7 +20,7 @@ export const runningTokenCountState = atom({
   default: 0
 })
 
-const runPrompt = async (prompt) => {
+const runPrompt = async (prompt, phaseID, sourceContextID) => {
   try {
     const requestOptions = {
       method: "POST",
@@ -37,26 +38,28 @@ const runPrompt = async (prompt) => {
     if (!res.choices) {
       return "";
     }
-    // const objRes = await createObject("Intermediate", {
-    //   text: res.choices[0].message.content,
-    // });
-    // await createRelationship(
-    //   "Phase",
-    //   phaseID,
-    //   "intermediates",
-    //   "Intermediate",
-    //   objRes.id,
-    //   "phase"
-    // );
-    // await createRelationship(
-    //   "Intermediate",
-    //   contextID,
-    //   "sourceFor",
-    //   "Intermediate",
-    //   objRes.id,
-    //   "source"
-    // );
-    // console.log("created rel for AI result");
+    const objRes = await createObject("Intermediate", {
+      text: res.choices[0].message.content,
+    });
+    await createRelationship(
+      "Phase",
+      phaseID,
+      "intermediates",
+      "Intermediate",
+      objRes.id,
+      "phase"
+    );
+    if (sourceContextID) {
+      await createRelationship(
+        "Intermediate",
+        sourceContextID,
+        "sourceFor",
+        "Intermediate",
+        objRes.id,
+        "source"
+      );
+    }
+    console.log("created rel for AI result");
     return res.choices[0].message.content;
   } catch (e) {
     console.error("COULD NOT SEARCH: ", e);
@@ -73,11 +76,7 @@ const runPrompt = async (prompt) => {
 // }
 export const requestsState = atom({
   key: 'requestsState', 
-  default: [{
-    title: 'Alert 1',
-    prompt: 'This is a message',
-    id: '1',
-  }],
+  default: [],
 });
 
 export const pendingRequestsState = selector({
@@ -126,6 +125,7 @@ export const allRequestStatuses = selector({
   default: []
 })
 
+
 export const rateLimitState = atom({
   key: 'rateLimitState',
   default: 8192,
@@ -145,18 +145,17 @@ export const requestState = atomFamily({
       if (!request) {
         return {};
       }
-      return { id: request.id, status: 'PENDING', data: request.prompt, result: null, start: null, end: null };
+      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, sourceContextID: request.id, result: null, start: null, end: null };
     },
   }),
   effects: (requestId) => [
     ({ setSelf, onSet }) => {
       onSet((newValue, oldValue) => {
-        console.log("Running in onset in atom!!!", newValue, oldValue)
         if (newValue.status === 'RUNNING' && oldValue.status !== 'RUNNING') {
           console.log('WE GOING!')
           const go = async () => {
             try {
-              const res = await runPrompt(newValue.data);
+              const res = await runPrompt(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
               console.log("RES: ", res);
               setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res}));
             } catch (e) {
@@ -196,14 +195,14 @@ export const alertsState = selector({
   key: 'alertsState ',
   get: ({get}) => {
     const requests = get(requestsState);
-    const allAlerts = []
+    let allAlerts = []
     // Note, RUNNING is for testing only. Alerts should only apply to done or err
     const clearedAlerts = get(clearedAlertsState);
     for (const request of requests) {
       const r = get(requestState(request.id));
       if (r.status === 'RUNNING') {
         allAlerts.push({
-          title: `Request ${r.id} is pending`,
+          title: `Request ${r.id} is running`,
           message: 'This is a message',
           type: 'info',
           id: request.id,
@@ -211,22 +210,19 @@ export const alertsState = selector({
       }
       if (r.status === 'DONE' && clearedAlerts.indexOf(request.id) === -1) {
         const r = get(requestState(request.id));
-        allAlerts.push({
+        const removedAlerts = allAlerts.filter(a => a.id !== request.id)
+        removedAlerts.push({
           title: `Request ${r.id} is done`,
           message: 'This is a message',
           type: 'success',
           id: request.id,
         })
+        allAlerts = removedAlerts
       }
     }
     return allAlerts
   },
-  default: [{
-    title: 'Alert 1',
-    message: 'This is a message',
-    type: 'success',
-    id: '1',
-  }],
+  default: [],
 });
 
 export const clearedAlertsState = atom({

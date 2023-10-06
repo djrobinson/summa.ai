@@ -50,21 +50,12 @@ const SourceSelector = ({ pasted, setDsID, setShowConfigure, setPasted }) => {
     <Box
       m="10px"
       w={"500px"}
-      height={"full"}
+      height={"800px"}
       bg={"white"}
       boxShadow={"2xl"}
       rounded={"md"}
       p={6}
     >
-      {/* <Stack>
-        <Flex justify="space-between">
-          <Box>
-            <Icon m="10px" as={FiRefreshCcw} w={6} h={6} />
-            <Icon m="10px" as={FaRegSave} w={6} h={6} />
-            <Icon m="10px" as={FaPlay} w={6} h={6} />
-          </Box>
-        </Flex>
-      </Stack> */}
       <Stack p="20px">
         <Text
           color={"green.500"}
