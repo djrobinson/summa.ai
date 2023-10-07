@@ -84,17 +84,14 @@ const CombineWizard = ({
 
     
   return (
-    <Box w="600px">
+    <Box w="600px" h="800px" overflowY="scroll" overflowX="hidden">
 
         <Heading>Combine Texts</Heading>
-    
-        <Input placeholder="Join Character"  value={joinchar} onChange={(e) => setjoinchar(e.target.value)} />
-        <Code>{joinedText}</Code>
+        <Input mb="20px" placeholder="Join Character"  value={joinchar} onChange={(e) => setjoinchar(e.target.value)} />
+        <Code p="8px">{joinedText}</Code>
         <Box h="370px" overflowY={"scroll"}>
-        {data && data.Get.Phase[0].intermediates && (
-        <IntermediatesPreview intermediates={intermediates} />)}
+            {data && data.Get.Phase[0].intermediates && (<IntermediatesPreview intermediates={intermediates} />)}
         </Box>
-        <Code style={{ whiteSpace: 'pre-line'}}></Code>
         <Flex justify="flex-end">
           <Button
             onClick={() => {

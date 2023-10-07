@@ -30,6 +30,7 @@ import MultiPromptWizard from "./phases/MultiPromptWizard";
 import { createPhase } from "../utils/weaviateServices";
 import CombineWizard from "./phases/CombineWizard";
 import SplitWizard from "./phases/SplitWizard";
+import ReportWizard from "./phases/ReportWizard";
 
 // PHASE RULES
 // The phases have 2 common properties
@@ -196,6 +197,25 @@ const Phases = ({ phases, workflowID }) => {
                 phaseID={phase._additional.id}
                 prevPhaseID={inMemoryPhases[i - 1]._additional.id}
               />
+            </Box>
+          );
+        }
+        if (phase.type === "REPORT") {
+          elements.push(
+            <Box
+              m="10px"
+              w={"700px"}
+              height={"800px"}
+              // eslint-disable-next-line react-hooks/rules-of-hooks
+              bg={useColorModeValue("white", "gray.900")}
+              boxShadow={"2xl"}
+              rounded={"md"}
+              p={6}
+            >
+              <ReportWizard
+                phaseID={phase._additional.id}
+                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+                />
             </Box>
           );
         }

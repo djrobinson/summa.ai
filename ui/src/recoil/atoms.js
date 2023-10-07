@@ -20,6 +20,43 @@ export const runningTokenCountState = atom({
   default: 0
 })
 
+const runPromptForReport = async (prompt, workflowID, phaseID) => {
+  try {
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+      }),
+    };
+    const response1 = await fetch(
+      "https://kdcwpoii3h.execute-api.us-west-2.amazonaws.com/dev/chat",
+      requestOptions
+    );
+    const res = await response1.json();
+    console.log("What is res: ", res);
+    if (!res.choices) {
+      return "";
+    }
+    const objRes = await createObject("Report", {
+      text: res.choices[0].message.content,
+    });
+    await createRelationship(
+      "Phase",
+      phaseID,
+      "intermediates",
+      "Report",
+      objRes.id,
+      "report"
+    );
+    
+    console.log("created rel for AI result");
+    return res.choices[0].message.content;
+  } catch (e) {
+    console.error("COULD NOT SEARCH: ", e);
+  }
+}
+
 const runPrompt = async (prompt, phaseID, sourceContextID) => {
   try {
     const requestOptions = {

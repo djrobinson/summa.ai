@@ -39,21 +39,6 @@ export const GET_INTERMEDIATES = gql`
   }
 `;
 
-const PromptResults = ({ phaseID, i }) => {
-  const request = useRecoilValue(requestState(phaseID + '-#' + i))
-  return (
-    <>
-      <Text fontWeight="800">Prompt #{i + 1} Answers</Text>
-      <Stack>
-
-        <Text>{request.id}</Text>
-        <Text>{request.status}</Text>
-        <Text>{request.result}</Text>
-
-      </Stack>
-    </>
-  );
-};
 
 
 const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
