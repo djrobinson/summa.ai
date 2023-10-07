@@ -19,14 +19,28 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
+  useQuery,
 } from "@chakra-ui/react";
 import { useRecoilState } from "recoil";
 import { requestsState } from "../../recoil/atoms";
+import { GET_INTERMEDIATES } from "./MultiPromptWizard";
+import { isEmpty } from "lodash";
 
-const ReportWizard = ({ phaseID }) => {
+const ReportWizard = ({ phaseID, prevPhaseID }) => {
     const [summarizingPrompt, setSummarizingPrompt] = React.useState("");
     const [showManager, setShowManager] = React.useState(false);
     const [requests, setRequests] = useRecoilState(requestsState);
+    const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
+        variables: {
+        id: prevPhaseID,
+        },
+    });
+    console.log('WHAT IS REPORT INTERMEDIATES: ', data, error, loading)
+    const context = !isEmpty(data) ? data.Get.Phase[0].intermediates[0].text : [];
+    console.log('WHAT CONTEXT: ', context)
+    // TODO: NEED TO BUILD THE SINGLE REPORT PROMPT REQUEST, PASS IN SOME INFO
+    // THAT INDICATES IT'S A REPORT. atoms.js WILL HANDLE ROUTING TO THE RIGHT
+    // URL. LAMBDA HANDLES CREATION.
   return (
     <Box w="600px">
       <Text fontSize="20px" fontWeight="800">Report Wizard</Text>
@@ -79,8 +93,13 @@ const ReportWizard = ({ phaseID }) => {
           rounded={"full"}
           flex={"1 0 auto"}
           onClick={() => {
-            setRequests([...requests])
-            showManager(true)
+            setRequests([...requests, {
+                id: 'REPORT-1',
+                type: 'REPORT',
+                prompt: summarizingPrompt,
+                context: context
+            }])
+            setShowManager(true)
           }}
         >
           Generate Report

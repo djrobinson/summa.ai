@@ -13,6 +13,8 @@
     "@aws-sdk/lib-storage": "^3.412.0",
     "aws-sdk": "^2.1457.0",
     "formidable": "^3.5.1",
-    "formidable-serverless": "^1.1.1"
+    "formidable-serverless": "^1.1.1",
+    "natural": "^6.7.2",
+    "openai": "^4.11.1"
   }
 }

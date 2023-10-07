@@ -29,8 +29,9 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
         prompt,
       }),
     };
+    // TODO CREATE NEW LAMBDA FOR REPORT VS INTERMEDIATE
     const response1 = await fetch(
-      "https://kdcwpoii3h.execute-api.us-west-2.amazonaws.com/dev/chat",
+      "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/report",
       requestOptions
     );
     const res = await response1.json();
@@ -38,16 +39,26 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
     if (!res.choices) {
       return "";
     }
+    // TODO: ALL OF THIS MOVES TO LAMBDA
     const objRes = await createObject("Report", {
       text: res.choices[0].message.content,
     });
     await createRelationship(
       "Phase",
       phaseID,
-      "intermediates",
+      "reports",
       "Report",
       objRes.id,
-      "report"
+      "phase"
+    );
+
+    await createRelationship(
+      "Workflow",
+      phaseID,
+      "reports",
+      "Report",
+      objRes.id,
+      "workflow"
     );
     
     console.log("created rel for AI result");
@@ -182,16 +193,22 @@ export const requestState = atomFamily({
       if (!request) {
         return {};
       }
-      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, sourceContextID: request.id, result: null, start: null, end: null };
+      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, sourceContextID: request.id, type: request.type, result: null, start: null, end: null };
     },
   }),
   effects: (requestId) => [
     ({ setSelf, onSet }) => {
       onSet((newValue, oldValue) => {
         if (newValue.status === 'RUNNING' && oldValue.status !== 'RUNNING') {
-          console.log('WE GOING!')
+          console.log('WE GOING!', newValue.type)
           const go = async () => {
             try {
+              if (newValue.type === 'REPORT') {
+                const res = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
+                console.log("RES: ", res);
+                setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res}));
+                return
+              }
               const res = await runPrompt(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
               console.log("RES: ", res);
               setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res}));

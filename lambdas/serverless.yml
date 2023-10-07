@@ -26,3 +26,27 @@ functions:
         path: /readfile
         method: post
         cors: true
+  chat:
+    handler: chat.chat
+    timeout: 30
+    events:
+    - http:
+        path: /chat
+        method: post
+        cors: true
+    - http:
+        path: /chat
+        method: get
+        cors: true
+  report:
+    handler: report.report
+    timeout: 30
+    events:
+    - http:
+        path: /report
+        method: post
+        cors: true
+    - http:
+        path: /report
+        method: get
+        cors: true
