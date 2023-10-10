@@ -12,6 +12,8 @@ import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { useRecoilState } from "recoil";
 import { apiKeyState } from "./recoil/atoms";
+import ReportsHome from "./Reports/ReportsHome";
+import Report from "./Reports/Report";
 
 
 export default function App() {
@@ -47,7 +49,8 @@ export default function App() {
           <Route path="/workflows" element={<WorkflowBuilder />} />
           <Route path="/workflows/:id" element={<Workflow />} />
           <Route path="/data" element={<DataSources />} />
-          <Route path="/reports" element={<DataSources />} />
+          <Route path="/reports" element={<ReportsHome />} />
+          <Route path="/reports/:id" element={<Report />} />
           <Route path="/requests" element={<RequestManager />} />
           <Route path="/account" element={<AccountManager presetApiKey={apiKey} />} />
           {/* Using path="*"" means "match anything", so this route

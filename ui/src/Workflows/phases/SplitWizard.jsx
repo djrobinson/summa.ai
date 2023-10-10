@@ -118,7 +118,6 @@ const SplitWizard = ({ prevPhaseID, phaseID }) => {
     go()
 },[])
   const runSplitSample = React.useCallback(() => {
-    // Max 10k chars for this
     const splitText = inputText.split(splitChar);
     const grouped = [];
     let currString = "";

@@ -12,6 +12,7 @@ import {
   Stack,
   Input,
   Code,
+  getToken,
 
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
@@ -20,6 +21,9 @@ import { GET_INTERMEDIATES } from "./MultiPromptWizard";
 import IntermediatesPreview from "../../components/IntermediatesPreview";
 import { useQuery } from "@apollo/client";
 import axios from "axios";
+import { getTokenCount, isValidLength } from "../../utils/tokenHelpers";
+import { createObject, createRelationship } from "../../utils/weaviateServices";
+import { GrConsole } from "react-icons/gr";
 
 
 const CombineWizard = ({
@@ -62,23 +66,44 @@ const CombineWizard = ({
         go()
     },[])
 
+    // TODO: IF IT'S SMALL, JUST SAVE THE INTERMEDIATE
     const updateAndBack = async () => {
         console.log('JOINEDTEXT ', joinedText)
-        const res = await axios.post(
-            "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/fileupload",
-            {
-                identifier: phaseID,
-                data: joinedText,
-            },
-            {
-            headers: {
-                "Content-Type": "text/plain",
-            },
-            }
-        );
+        const isSmall = isValidLength(joinedText)
+        const size = getTokenCount(joinedText)
+        console.log("IS IT SMALL?", size)
+        if (isSmall) {
+            const objRes = await createObject("Intermediate", {
+                text: joinedText,
+                order: 0
+            });
+            await createRelationship(
+                "Phase",
+                phaseID,
+                "intermediates",
+                "Intermediate",
+                objRes.id,
+                "phase"
+            );
+
+            console.log("CREATED INTERMEDIATE FOR SMALL ONE!", objRes)
+        } else {
+            const res = await axios.post(
+                "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/fileupload",
+                {
+                    identifier: phaseID,
+                    data: joinedText,
+                },
+                {
+                headers: {
+                    "Content-Type": "text/plain",
+                },
+                }
+            );
+            console.log("big res", res);
+        }
         // update the data source with the s3 url
         // set phase to Splitter
-        console.log("res", res);
         };
     
 

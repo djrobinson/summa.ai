@@ -29,19 +29,20 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
         prompt,
       }),
     };
-    // TODO CREATE NEW LAMBDA FOR REPORT VS INTERMEDIATE
+
     const response1 = await fetch(
       "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/report",
       requestOptions
     );
     const res = await response1.json();
     console.log("What is res: ", res);
-    if (!res.choices) {
+    if (!res.sentences) {
       return "";
     }
     // TODO: ALL OF THIS MOVES TO LAMBDA
     const objRes = await createObject("Report", {
-      text: res.choices[0].message.content,
+      title: 'Report 1',
+      text: res.sentences.join('\n\n'),
     });
     await createRelationship(
       "Phase",
@@ -62,7 +63,7 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
     );
     
     console.log("created rel for AI result");
-    return res.choices[0].message.content;
+    return { res: res.sentences.join('\n\n'), reportID: objRes.id };
   } catch (e) {
     console.error("COULD NOT SEARCH: ", e);
   }
@@ -204,9 +205,9 @@ export const requestState = atomFamily({
           const go = async () => {
             try {
               if (newValue.type === 'REPORT') {
-                const res = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
+                const { reportID, res } = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
                 console.log("RES: ", res);
-                setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res}));
+                setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res, reportID}));
                 return
               }
               const res = await runPrompt(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
