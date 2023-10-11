@@ -19,10 +19,17 @@ import {
   Input,
   FormLabel,
   Stack,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
 } from "@chakra-ui/react";
 import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { apiKeyState, requestsState } from "../recoil/atoms";
 
 const FETCH_REPORTS = gql`
   query getReport($id: String!) {
@@ -38,10 +45,39 @@ const FETCH_REPORTS = gql`
   }
 `;
 
-const Sentence = ({ sentence }) => {
-    const [isUnderlined, setIsUnderlined] = React.useState(false);
-    return <Text as="span" style={{ cursor: 'pointer', color: isUnderlined ? 'teal' : 'black'}} onMouseEnter={() => {setIsUnderlined(true)}} onMouseOut={() => setIsUnderlined(false)}>{sentence}</Text>
+const FETCH_RELATED = gql`
+  query getRelated($concept: String!, $lim: Int!) {
+    Get {
+      Intermediate(
+        nearText: {
+          concepts: [$concept]
+        }
+        limit: $lim
+      ) {
+        _additional {
+          id
+        }
+        text
+      }
+    }
+  }
+`;
 
+
+const Sentence = ({ sentence, setAnalyzeSentence }) => {
+    const [isUnderlined, setIsUnderlined] = React.useState(false);
+    return <Text as="span" style={{ cursor: 'pointer', color: isUnderlined ? 'teal' : 'black'}} onMouseEnter={() => {setIsUnderlined(true)}} onMouseOut={() => setIsUnderlined(false)} onClick={() => setAnalyzeSentence(sentence)}>{sentence}</Text>
+}
+
+const enhance = async (analyzeSentence, relatedData, setRequests) => {
+  const newRequests = relatedData.map((r) => {
+    return {
+      id: r._additional.id,
+      prompt: "Find the 2-3 statements from the context that best support the following summary sentence. Return them verbatim and order them by relevance (high to low): \nSUMMARY SENTENCE: " + analyzeSentence,
+      context: "\nCONTEXT: " + r.text,
+    };
+  })
+  setRequests(rs => [...rs, ...newRequests])
 }
 
 const Report = () => {
@@ -49,39 +85,64 @@ const Report = () => {
   const { data, error, loading } = useQuery(FETCH_REPORTS, {
     variables: { id },
   });
+  const apiKey = useRecoilValue(apiKeyState)
+  const [requests, setRequests] = useRecoilState(requestsState);
+  
   console.log("reports: ", data, error, loading);
-  const [newReportTitle, setNewReportTitle] = React.useState("");
+  const [analyzeSentence, setAnalyzeSentence] = React.useState("");
+  const [fetchRelated, { data: relatedData, error: relatedError, loading: relatedLoading }] = useLazyQuery(FETCH_RELATED, {
+    variables: { concept: analyzeSentence, lim: "5" },
+    context: {
+      headers: {
+        "X-Openai-Api-Key": apiKey
+      }
+    },
+  });
+  
+  console.log("related: ", relatedData)
   const report = !isEmpty(data) ? data.Get.Report[0] : {};
   const sentences = report.text ? report.text.split("\n\n") : [];
     return (
-        <Flex>
+        <Box >
     <Box
         m="10px"
-        w={"800px"}
-        height={"800px"}
+        w={"900px"}
+        height={"880px"}
         // eslint-disable-next-line react-hooks/rules-of-hooks
         bg={"white"}
         boxShadow={"2xl"}
         rounded={"md"}
-        p={6}
+        p={120}
+        align="justify"
+        justify="center"
         >
-        <Heading>Reports</Heading>
-        <Text>{sentences.map(s => <Sentence sentence={s} />)}</Text>
+        <Heading>Report</Heading>
+        <br />
+        <Text>{sentences.map(s => <Sentence setAnalyzeSentence={(val) => {
+          setAnalyzeSentence(val)
+          fetchRelated()
+        }} sentence={s} />)}</Text>
       </Box>
       <Box
-        m="10px"
-        w={"800px"}
-        height={"800px"}
+        pos="absolute"
+        right="0px"
+        top="0px"
+        w={"500px"}
+        height={"100%"}
         // eslint-disable-next-line react-hooks/rules-of-hooks
         bg={"white"}
         boxShadow={"2xl"}
         rounded={"md"}
-        p={6}
-        >
-        <Heading>Analysis</Heading>
-
+        overflow="scroll"
+        p={6} trapFocus={false} size="md" placement={'right'} onClose={()=> {}} isOpen={true}>
+            <Text>{analyzeSentence}</Text>
+            <Button onClick={() => enhance(analyzeSentence, relatedData.Get.Intermediate, setRequests)}>Enhance Supporting Texts w/ AI</Button>
+            <Text fontWeight="800">Supporting Texts</Text>
+            {
+              relatedData && relatedData.Get.Intermediate.map((r) => <Text mt="30px">{r.text}</Text>)
+            }
       </Box>
-      </Flex>
+      </Box>
     );
 
 

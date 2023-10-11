@@ -41,9 +41,8 @@ const RequestsButton = () => {
         const lastMinute = now - 60;
         const lastMinuteRequests = all.filter(r => r.start && r.start > lastMinute)
         const lastMinTokens = lastMinuteRequests.reduce((acc, r) => acc + getTokenCount(r.prompt + ' ' + r.context), 0)
-        console.log('lastMinuteRequests ', all, lastMinuteRequests)
+
         let limit = rateLimit - lastMinTokens
-        console.log('lastMinTokens ', lastMinTokens, rateLimit, limit, pendings)
         pendings.forEach((p) => {
             const tokens = getTokenCount(p.prompt + ' ' + p.context)
             if (tokens < limit) {

@@ -20,6 +20,27 @@ export const runningTokenCountState = atom({
   default: 0
 })
 
+const introspect = async (prompt, phaseID, sourceContextID) => {
+  try {
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+      }),
+    };
+
+    const response1 = await fetch(
+      "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/introspect",
+      requestOptions
+    );
+    const res = await response1.json();
+    console.log("What is introspect res: ", res);
+  } catch (e) {
+    console.error("COULD NOT SEARCH: ", e);
+  }
+}
+
 const runPromptForReport = async (prompt, workflowID, phaseID) => {
   try {
     const requestOptions = {
@@ -206,6 +227,12 @@ export const requestState = atomFamily({
             try {
               if (newValue.type === 'REPORT') {
                 const { reportID, res } = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
+                console.log("RES: ", res);
+                setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res, reportID}));
+                return
+              }
+              if (newValue.type === 'INTROSPECT') {
+                const { reportID, res } = await introspect(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
                 console.log("RES: ", res);
                 setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res, reportID}));
                 return

@@ -65,7 +65,8 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
   if (data && data.Get.Phase[0].intermediates) {
     contexts = data.Get.Phase[0].intermediates.map((d,i) => {
       return {
-        ...d,
+        // Note: I commented ...d and haven't tested it! It might break something in atoms.js
+        // ...d,
         id: d._additional.id,
         prompt: summarizingPrompt,
         context: d.text,
