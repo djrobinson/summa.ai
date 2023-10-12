@@ -215,6 +215,7 @@ const Phases = ({ phases, workflowID }) => {
               <ReportWizard
                 phaseID={phase._additional.id}
                 prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+                workflowID={workflowID}
                 />
             </Box>
           );

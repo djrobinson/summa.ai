@@ -27,7 +27,7 @@ import { GET_INTERMEDIATES } from "./MultiPromptWizard";
 import { isEmpty } from "lodash";
 import { useQuery } from "@apollo/client";
 
-const ReportWizard = ({ phaseID, prevPhaseID }) => {
+const ReportWizard = ({ workflowID, phaseID, prevPhaseID }) => {
     const [summarizingPrompt, setSummarizingPrompt] = React.useState("");
     const [showManager, setShowManager] = React.useState(false);
     const [requests, setRequests] = useRecoilState(requestsState);
@@ -106,7 +106,8 @@ const ReportWizard = ({ phaseID, prevPhaseID }) => {
                 type: 'REPORT',
                 prompt: summarizingPrompt,
                 context: context,
-                phaseID
+                phaseID,
+                workflowID
 
             }])
             setShowManager(true)
@@ -125,7 +126,8 @@ const ReportWizard = ({ phaseID, prevPhaseID }) => {
                 type: 'REPORT',
                 prompt: summarizingPrompt,
                 context: context,
-                phaseID
+                phaseID,
+                workflowID
             }])
             setShowManager(true)
           }}

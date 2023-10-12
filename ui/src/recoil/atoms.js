@@ -62,10 +62,10 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
     }
     // TODO: ALL OF THIS MOVES TO LAMBDA
     const objRes = await createObject("Report", {
-      title: 'Report 7',
+      title: 'Report 10',
       text: res.sentences.join('\n\n'),
     });
-    console.log('CREATED REPORT: ', phaseID, objRes)
+    console.log('CREATED REPORT: ', workflowID, phaseID, objRes)
     await createRelationship(
       "Phase",
       phaseID,
@@ -216,7 +216,7 @@ export const requestState = atomFamily({
       if (!request) {
         return {};
       }
-      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, sourceContextID: request.id, type: request.type, result: null, start: null, end: null };
+      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, workflowID: request.workflowID, sourceContextID: request.id, type: request.type, result: null, start: null, end: null };
     },
   }),
   effects: (requestId) => [
@@ -227,7 +227,7 @@ export const requestState = atomFamily({
           const go = async () => {
             try {
               if (newValue.type === 'REPORT') {
-                const { reportID, res } = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.sourceContextID, newValue.phaseID);
+                const { reportID, res } = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.workflowID, newValue.phaseID);
                 console.log("RES: ", res);
                 setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res, reportID}));
                 return
