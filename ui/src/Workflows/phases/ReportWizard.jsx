@@ -36,13 +36,9 @@ const ReportWizard = ({ phaseID, prevPhaseID }) => {
         id: prevPhaseID,
         },
     });
-    console.log('WHAT IS REPORT INTERMEDIATES: ',prevPhaseID,  data, error, loading)
     const context = !isEmpty(data) ? summarizingPrompt + ' ' + data.Get.Phase[0].intermediates[0].text : [];
-    console.log('WHAT CONTEXT: ', context)
     const [doneRequests] = useRecoilState(doneRequestsState)
-    console.log('DONE REQUESTS', doneRequests)
-    const reportRequest = doneRequests.filter((request) => request.id === 'REPORT-1')
-    console.log("WHAT IS REPORT REQUEST: ", reportRequest)
+    const reportRequest = doneRequests.filter((request) => request.id === 'REPORT-3')
     const reportID = reportRequest.length > 0 ? reportRequest[0].reportID : null
   return (
     <Box w="600px">
@@ -93,7 +89,7 @@ const ReportWizard = ({ phaseID, prevPhaseID }) => {
         />
         {
             showManager && (
-                <PromptControls prompt={context} id={'REPORT-1'} />
+                <PromptControls prompt={context} id={'REPORT-3'} />
             )
         }
         <Flex>
@@ -106,10 +102,12 @@ const ReportWizard = ({ phaseID, prevPhaseID }) => {
           flex={"1 0 auto"}
           onClick={() => {
             setRequests([...requests, {
-                id: 'REPORT-1',
+                id: 'REPORT-3',
                 type: 'REPORT',
                 prompt: summarizingPrompt,
-                context: context
+                context: context,
+                phaseID
+
             }])
             setShowManager(true)
           }}
@@ -123,10 +121,11 @@ const ReportWizard = ({ phaseID, prevPhaseID }) => {
           flex={"1 0 auto"}
           onClick={() => {
             setRequests([...requests, {
-                id: 'REPORT-1',
+                id: 'REPORT-3',
                 type: 'REPORT',
                 prompt: summarizingPrompt,
-                context: context
+                context: context,
+                phaseID
             }])
             setShowManager(true)
           }}

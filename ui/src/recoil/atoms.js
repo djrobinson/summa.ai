@@ -62,9 +62,10 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
     }
     // TODO: ALL OF THIS MOVES TO LAMBDA
     const objRes = await createObject("Report", {
-      title: 'Report 1',
+      title: 'Report 7',
       text: res.sentences.join('\n\n'),
     });
+    console.log('CREATED REPORT: ', phaseID, objRes)
     await createRelationship(
       "Phase",
       phaseID,
@@ -76,13 +77,13 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
 
     await createRelationship(
       "Workflow",
-      phaseID,
+      workflowID,
       "reports",
       "Report",
       objRes.id,
       "workflow"
     );
-    
+
     console.log("created rel for AI result");
     return { res: res.sentences.join('\n\n'), reportID: objRes.id };
   } catch (e) {
@@ -226,7 +227,7 @@ export const requestState = atomFamily({
           const go = async () => {
             try {
               if (newValue.type === 'REPORT') {
-                const { reportID, res } = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
+                const { reportID, res } = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.sourceContextID, newValue.phaseID);
                 console.log("RES: ", res);
                 setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res, reportID}));
                 return

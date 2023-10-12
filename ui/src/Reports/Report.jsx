@@ -40,15 +40,36 @@ const FETCH_REPORTS = gql`
         }
         text
         title
+        workflow {
+          ... on Workflow {
+            _additional {
+              id
+            }
+            phases {
+              ... on Phase {
+                _additional {
+                  id
+                }
+                type
+              }
+            }
+          }
+        }
       }
     }
   }
 `;
 
+// todo: filter to only datasource intermediates
 const FETCH_RELATED = gql`
   query getRelated($concept: String!, $lim: Int!) {
     Get {
       Intermediate(
+        where: {
+          path: ["phase", "Phase", "id"],
+          operator: Equal,
+          valueText: "hey"
+        }
         nearText: {
           concepts: [$concept]
         }
@@ -58,8 +79,15 @@ const FETCH_RELATED = gql`
           id
         }
         text
+        phase {
+          ... on Phase {
+            _additional {
+              id
+            }
+        }
       }
     }
+  }
   }
 `;
 
@@ -85,6 +113,9 @@ const Report = () => {
   const { data, error, loading } = useQuery(FETCH_REPORTS, {
     variables: { id },
   });
+  console.log("REPORT : ", data, error)
+  // const dataSourcePhaseID = data && data.Get.Report[0].phases[0].workflow[0].phases.filter(p => p.type === "DATA_SOURCE")[0]._additional.id
+  // console.log("YOLO: ", dataSourcePhaseID)
   const apiKey = useRecoilValue(apiKeyState)
   const [requests, setRequests] = useRecoilState(requestsState);
   
@@ -99,7 +130,6 @@ const Report = () => {
     },
   });
   
-  console.log("related: ", relatedData)
   const report = !isEmpty(data) ? data.Get.Report[0] : {};
   const sentences = report.text ? report.text.split("\n\n") : [];
     return (

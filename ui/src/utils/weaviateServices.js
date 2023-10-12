@@ -51,19 +51,14 @@ export const createPhase = async (workflowId, phase) => {
 
   console.log(JSON.stringify(phaseResult, null, 2))
 
-  await client.data
-    .referenceCreator()
-    .withClassName('Workflow')
-    .withId(workflowId)
-    .withReferenceProperty('phases')
-    .withReference(
-      client.data
-        .referencePayloadBuilder()
-        .withClassName('Phase')
-        .withId(phaseResult.id)
-        .payload(),
-    )
-    .do()
+  await createRelationship(
+      "Workflow",
+      workflowId,
+      "phases",
+      "Phase",
+      phaseResult.id,
+      "workflow"
+    );
   return phaseResult.id
 }
 
