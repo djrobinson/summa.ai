@@ -312,3 +312,48 @@ export const clearedAlertsState = atom({
   key: 'clearedAlertsState', 
   default: [],
 });
+
+export const enhanceRequestsState = atom({
+  key: 'enhanceRequestsState', 
+  default: {}
+})
+
+export const enhanceRequestState = selector({
+  key: 'enhanceRequestResultsState',
+  default: null,
+  get: ({get}) => {
+    const enhanceRequests = get(enhanceRequestsState);
+    if (!enhanceRequests) {
+      return null
+    }
+    return enhanceRequests
+  }
+})
+
+export const enhanceRequestResultsState = selectorFamily({
+  key: 'enhanceRequestResultsState',
+  get: (sentenceHash) => ({get}) => {
+    const enhanceRequests = get(enhanceRequestsState);
+    if (!enhanceRequests) {
+      return null
+    }
+    const enhanceRequestIDs = enhanceRequests[sentenceHash]
+    if (!enhanceRequestIDs) {
+      return null
+    }
+    const results = enhanceRequestIDs.reduce((acc, id) => {
+      const res = get(requestState(id)).result
+      if (!res) {
+        return {
+          ...acc,
+          [id]: null
+        }
+      }
+      return {
+        ...acc,
+        [id]: JSON.parse(res)
+      }
+    }, {})
+    return results
+  },
+});

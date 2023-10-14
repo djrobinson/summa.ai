@@ -7,6 +7,8 @@ import {
 } from "../utils/weaviateServices";
 import { buildClientSchema, getIntrospectionQuery } from "graphql";
 import axios from "axios";
+import md5 from "md5";
+
 
 import {
   Wrap,
@@ -29,7 +31,7 @@ import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { apiKeyState, requestsState } from "../recoil/atoms";
+import { apiKeyState, enhanceRequestResultsState, enhanceRequestsState, requestState, requestsState } from "../recoil/atoms";
 
 const FETCH_REPORTS = gql`
   query getReport($id: String!) {
@@ -60,15 +62,14 @@ const FETCH_REPORTS = gql`
   }
 `;
 
-// todo: filter to only datasource intermediates
 const FETCH_RELATED = gql`
-  query getRelated($concept: String!, $lim: Int!) {
+  query getRelated($concept: String!, $lim: Int!, $phase: String!) {
     Get {
       Intermediate(
         where: {
           path: ["phase", "Phase", "id"],
           operator: Equal,
-          valueText: "hey"
+          valueText: $phase
         }
         nearText: {
           concepts: [$concept]
@@ -97,15 +98,20 @@ const Sentence = ({ sentence, setAnalyzeSentence }) => {
     return <Text as="span" style={{ cursor: 'pointer', color: isUnderlined ? 'teal' : 'black'}} onMouseEnter={() => {setIsUnderlined(true)}} onMouseOut={() => setIsUnderlined(false)} onClick={() => setAnalyzeSentence(sentence)}>{sentence}</Text>
 }
 
-const enhance = async (analyzeSentence, relatedData, setRequests) => {
+const enhance = async (sentenceUuid, analyzeSentence, relatedData, setRequests, setEnhanceRequests) => {
+  // enhance request id must match regular requests id
   const newRequests = relatedData.map((r) => {
     return {
-      id: r._additional.id,
-      prompt: "Find the 2-3 statements from the context that best support the following summary sentence. Return them verbatim and order them by relevance (high to low): \nSUMMARY SENTENCE: " + analyzeSentence,
+      id: 'ENHANCE-' + r._additional.id,
+      prompt: "Find the 2-3 statements from the context that best support the following summary sentence. Return them verbatim as strings in a javascript array and order them by relevance (high to low): \nSUMMARY SENTENCE: " + analyzeSentence,
       context: "\nCONTEXT: " + r.text,
     };
   })
   setRequests(rs => [...rs, ...newRequests])
+  setEnhanceRequests(rs => ({
+    ...rs,
+    [sentenceUuid]: relatedData.map(r => 'ENHANCE-' + r._additional.id)
+  })) 
 }
 
 const Report = () => {
@@ -114,64 +120,95 @@ const Report = () => {
     variables: { id },
   });
   console.log("REPORT : ", data, error)
-  // const dataSourcePhaseID = data && data.Get.Report[0].phases[0].workflow[0].phases.filter(p => p.type === "DATA_SOURCE")[0]._additional.id
-  // console.log("YOLO: ", dataSourcePhaseID)
+  const dataSourcePhaseID = data && data.Get.Report[0].workflow[0].phases.filter(p => p.type === "DATA_SOURCE")[0]._additional.id
+  console.log("YOLO: ", dataSourcePhaseID)
   const apiKey = useRecoilValue(apiKeyState)
   const [requests, setRequests] = useRecoilState(requestsState);
-  
+  const [enhanceRequests, setEnhanceRequests] = useRecoilState(enhanceRequestsState);
+  console.log('enhanceRequests   ', enhanceRequests)
   console.log("reports: ", data, error, loading);
   const [analyzeSentence, setAnalyzeSentence] = React.useState("");
+  const [mapper, setMapper] = React.useState({})
+  const sentenceUuid = md5(analyzeSentence)
+  const sentenceResponse = useRecoilValue(requestState('REORDER-' + sentenceUuid))
+  console.log('WE GET SENTENCE RESPONSE? ', sentenceResponse)
+  const tryingThis = useRecoilValue(enhanceRequestResultsState(sentenceUuid))
+  console.log('When does this exist: ', tryingThis)
   const [fetchRelated, { data: relatedData, error: relatedError, loading: relatedLoading }] = useLazyQuery(FETCH_RELATED, {
-    variables: { concept: analyzeSentence, lim: "5" },
+    variables: { concept: analyzeSentence, lim: "2", phase: dataSourcePhaseID },
     context: {
       headers: {
         "X-Openai-Api-Key": apiKey
       }
     },
   });
-  
+  React.useEffect(() => {
+    console.log('TRYING THIS CHANGES: ', tryingThis)
+    const itsAllHere = tryingThis ? Object.values(tryingThis).every((t) => !isEmpty(t)) : false
+    if (itsAllHere) {
+      const relatedSentences = Object.values(tryingThis).reduce((acc, sents) => {
+        return [...acc, ...sents]
+      },[])
+      const mp = Object.keys(tryingThis).reduce((acc, key) => {
+        const sents = tryingThis[key]
+        sents.forEach(s => {
+          acc[s] = key
+        })
+        return acc
+      },{})
+      console.log('ITS ALL HERE', mp, relatedSentences)
+      setMapper(mp)
+      setRequests(rs => [...rs, {
+        id: 'REORDER-' + sentenceUuid,
+        prompt: "Reorder the following javascript array of statements based on how well they support the following summary sentence from most relevant to least relevant: \nSUMMARY SENTENCE: " + analyzeSentence,
+        context: "Related Sentences: " + JSON.stringify(relatedSentences),
+      }])
+    }
+  }, [analyzeSentence, sentenceUuid, tryingThis, setRequests])
+
   const report = !isEmpty(data) ? data.Get.Report[0] : {};
   const sentences = report.text ? report.text.split("\n\n") : [];
     return (
-        <Box >
-    <Box
-        m="10px"
-        w={"900px"}
-        height={"880px"}
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        bg={"white"}
-        boxShadow={"2xl"}
-        rounded={"md"}
-        p={120}
-        align="justify"
-        justify="center"
-        >
-        <Heading>Report</Heading>
-        <br />
-        <Text>{sentences.map(s => <Sentence setAnalyzeSentence={(val) => {
-          setAnalyzeSentence(val)
-          fetchRelated()
-        }} sentence={s} />)}</Text>
-      </Box>
+    <Box>
       <Box
-        pos="absolute"
-        right="0px"
-        top="0px"
-        w={"500px"}
-        height={"100%"}
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        bg={"white"}
-        boxShadow={"2xl"}
-        rounded={"md"}
-        overflow="scroll"
-        p={6} trapFocus={false} size="md" placement={'right'} onClose={()=> {}} isOpen={true}>
-            <Text>{analyzeSentence}</Text>
-            <Button onClick={() => enhance(analyzeSentence, relatedData.Get.Intermediate, setRequests)}>Enhance Supporting Texts w/ AI</Button>
-            <Text fontWeight="800">Supporting Texts</Text>
-            {
-              relatedData && relatedData.Get.Intermediate.map((r) => <Text mt="30px">{r.text}</Text>)
-            }
-      </Box>
+          m="10px"
+          w={"900px"}
+          height={"880px"}
+          // eslint-disable-next-line react-hooks/rules-of-hooks
+          bg={"white"}
+          boxShadow={"2xl"}
+          rounded={"md"}
+          p={120}
+          align="justify"
+          justify="center"
+          >
+          <Heading>Report</Heading>
+          <br />
+          <Text>{sentences.map(s => <Sentence setAnalyzeSentence={(val) => {
+            setAnalyzeSentence(val)
+            fetchRelated()
+          }} sentence={s} />)}</Text>
+        </Box>
+        <Box
+          pos="absolute"
+          right="0px"
+          top="0px"
+          w={"500px"}
+          height={"100%"}
+          // eslint-disable-next-line react-hooks/rules-of-hooks
+          bg={"white"}
+          boxShadow={"2xl"}
+          rounded={"md"}
+          overflow="scroll"
+          p={6} trapFocus={false} size="md" placement={'right'} onClose={()=> {}} isOpen={true}>
+              <Text>{analyzeSentence}</Text>
+              <Button onClick={() => enhance(sentenceUuid, analyzeSentence, relatedData.Get.Intermediate, setRequests, setEnhanceRequests)}>Enhance Supporting Texts w/ AI</Button>
+              <Text fontWeight="800">Supporting Texts</Text>
+              {/* in enhance function, set IDs to the  */}
+              {
+                relatedData && relatedData.Get.Intermediate.map((r) => <Text mt="30px">{r.text}</Text>)
+              }
+        </Box>
       </Box>
     );
 
