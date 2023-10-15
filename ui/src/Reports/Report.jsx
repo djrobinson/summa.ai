@@ -6,6 +6,7 @@ import {
   createObject,
 } from "../utils/weaviateServices";
 import { buildClientSchema, getIntrospectionQuery } from "graphql";
+import {TokenAnnotator, TextAnnotator} from 'react-text-annotate'
 import axios from "axios";
 import md5 from "md5";
 
@@ -93,11 +94,6 @@ const FETCH_RELATED = gql`
 `;
 
 
-const Sentence = ({ sentence, setAnalyzeSentence }) => {
-    const [isUnderlined, setIsUnderlined] = React.useState(false);
-    return <Text as="span" style={{ cursor: 'pointer', color: isUnderlined ? 'teal' : 'black'}} onMouseEnter={() => {setIsUnderlined(true)}} onMouseOut={() => setIsUnderlined(false)} onClick={() => setAnalyzeSentence(sentence)}>{sentence}</Text>
-}
-
 const enhance = async (sentenceUuid, analyzeSentence, relatedData, setRequests, setEnhanceRequests) => {
   // enhance request id must match regular requests id
   const newRequests = relatedData.map((r) => {
@@ -127,6 +123,8 @@ const Report = () => {
   const [enhanceRequests, setEnhanceRequests] = useRecoilState(enhanceRequestsState);
   console.log('enhanceRequests   ', enhanceRequests)
   console.log("reports: ", data, error, loading);
+  const [edit, setEdit] = React.useState(false)
+  const [annotate, setAnnotate] = React.useState([])
   const [analyzeSentence, setAnalyzeSentence] = React.useState("");
   const [mapper, setMapper] = React.useState({})
   const sentenceUuid = md5(analyzeSentence)
@@ -167,6 +165,7 @@ const Report = () => {
   }, [analyzeSentence, sentenceUuid, tryingThis, setRequests])
 
   const report = !isEmpty(data) ? data.Get.Report[0] : {};
+  const text = report.text;
   const sentences = report.text ? report.text.split("\n\n") : [];
     return (
     <Box>
@@ -183,11 +182,17 @@ const Report = () => {
           justify="center"
           >
           <Heading>Report</Heading>
-          <br />
-          <Text>{sentences.map(s => <Sentence setAnalyzeSentence={(val) => {
-            setAnalyzeSentence(val)
+          {edit ? <Button m="20px" onClick={() => setEdit(false)}>Cancel Annotation</Button> : <Button m="20px" onClick={() => setEdit(true)}>Create New Annotation</Button>}
+          
+          {edit ? <TokenAnnotator tokens={sentences.join('\n').split(' ')} value={annotate} onChange={(v) => {
+            console.log("WHAT V IS: ", v)
+            const last = v[v.length - 1]
+            setAnnotate([last])
+            const newSent = sentences.join('\n').split(' ').slice(last.start, last.end).join(' ')
+            console.log("WHAT newSent IS: ", newSent)
+            setAnalyzeSentence(newSent)
             fetchRelated()
-          }} sentence={s} />)}</Text>
+          }} /> : <Text fontWeight={'800'}>{text}</Text>}
         </Box>
         <Box
           pos="absolute"
@@ -202,11 +207,12 @@ const Report = () => {
           overflow="scroll"
           p={6} trapFocus={false} size="md" placement={'right'} onClose={()=> {}} isOpen={true}>
               <Text>{analyzeSentence}</Text>
-              <Button onClick={() => enhance(sentenceUuid, analyzeSentence, relatedData.Get.Intermediate, setRequests, setEnhanceRequests)}>Enhance Supporting Texts w/ AI</Button>
+              <Button m="20px" onClick={() => enhance(sentenceUuid, analyzeSentence, relatedData.Get.Intermediate, setRequests, setEnhanceRequests)}>Enhance Supporting Texts w/ AI</Button>
               <Text fontWeight="800">Supporting Texts</Text>
-              {/* in enhance function, set IDs to the  */}
               {
-                relatedData && relatedData.Get.Intermediate.map((r) => <Text mt="30px">{r.text}</Text>)
+                relatedData && isEmpty(enhanceRequests) ? 
+                  relatedData.Get.Intermediate.map((r) => <Text mt="30px">{r.text}</Text>)
+                  : relatedData.Get.Intermediate.map((r) => <Text fontWeight="800" mt="30px">{r.text}</Text>)
               }
         </Box>
       </Box>
