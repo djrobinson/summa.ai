@@ -51,7 +51,7 @@ const StatusIcon = ({status}) => {
   else return <Badge colorScheme='yellow'>Pending</Badge>
 }
 
-const PromptControls = ({ id, prompt }) => {
+const PromptControls = ({ id }) => {
   const [showModal, setShowModal] = React.useState(false);
   const [modalMode, setModalMode] = React.useState("PROMPT")
   const [request, setRequest] = useRecoilState(requestState(id));
@@ -159,9 +159,6 @@ const PromptControls = ({ id, prompt }) => {
         </Box>
       </Box>
       {!isEmpty(request.start) && <ProgressBar start={request.start} done={!isEmpty(request.result)} />}
-      <Box>
-      
-      </Box>
     </Stack>
     </>
   );

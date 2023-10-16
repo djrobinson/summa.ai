@@ -19,6 +19,13 @@ import {
   Text,
   useColorModeValue,
   Button,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
   Input,
   FormLabel,
   Stack,
@@ -33,6 +40,8 @@ import { isEmpty } from "lodash";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { apiKeyState, enhanceRequestResultsState, enhanceRequestsState, requestState, requestsState } from "../recoil/atoms";
+import PromptControls from "../RequestManager/PromptControls";
+import IntermediatePreview from "../components/IntermediatePreview";
 
 const FETCH_REPORTS = gql`
   query getReport($id: String!) {
@@ -99,7 +108,7 @@ const enhance = async (sentenceUuid, analyzeSentence, relatedData, setRequests, 
   const newRequests = relatedData.map((r) => {
     return {
       id: 'ENHANCE-' + r._additional.id,
-      prompt: "Find the 2-3 statements from the context that best support the following summary sentence. Return them verbatim as strings in a javascript array and order them by relevance (high to low): \nSUMMARY SENTENCE: " + analyzeSentence,
+      prompt: "Find the 2-3 quotes from the provided context that best support the following summary sentence. Return them verbatim as strings in a javascript array and order them by relevance (high to low): \nSUMMARY SENTENCE: " + analyzeSentence,
       context: "\nCONTEXT: " + r.text,
     };
   })
@@ -108,6 +117,74 @@ const enhance = async (sentenceUuid, analyzeSentence, relatedData, setRequests, 
     ...rs,
     [sentenceUuid]: relatedData.map(r => 'ENHANCE-' + r._additional.id)
   })) 
+}
+
+const PreviewIntermediate = ({ text, intermediateID, setHighlightIntermediate }) => {
+
+  return (<Box h="200px">
+        <Box pos="relative" w="full" bg="blue">
+        <Box pos="absolute" h="200px" w="full" overflowY="hidden">
+          <Text fontWeight="800" fontSize="12px">Context</Text>
+
+          <Text>
+            {text}
+          </Text>
+
+          </Box>
+          <Box pos="absolute" h="200px" w="full" style={{ 
+            zIndex: 3,
+            background: `linear-gradient(transparent 0%, white)` 
+          }}>
+            <Flex w="full" h="full" align="flex-end" justify="flex-end">
+            <Button variant="outline"  w="120px" bg="teal" color="white" size="xs" onClick={() => {
+              setHighlightIntermediate(intermediateID)
+            }}>Annotate</Button>
+            </Flex>
+          </Box>
+        </Box>
+      </Box>)
+
+}
+
+const PreviewAIEnhanced = ({text, mapper, intermediates, setHighlightIntermediate, setHighlightText}) => {
+  // console.log("MAPPER ", mapper)
+  console.log("MAPPER RESULT: ", mapper[text])
+  const intermediateID = mapper[text] ? mapper[text].replace('ENHANCE-', '') : null
+  const related = mapper[text] ? intermediates.filter(i => i._additional.id === intermediateID) : []
+  const passage = related[0].text.replaceAll('\n', ' ')
+  const splitText = related[0] ? passage.split(text) : ["", ""]
+  const afterText = splitText[1]
+  const beforeText = splitText[0].slice(splitText[0].length - 100, splitText[0].length)
+  console.log('FULL RESULT: ', afterText)
+  return (<Box h="200px">
+        <Box pos="relative" w="full" bg="blue">
+        <Box pos="absolute" h="200px" w="full" overflowY="hidden">
+          <Text fontWeight="800" fontSize="12px">Context</Text>
+          <Text>
+          <Text as="span">
+            {beforeText + " "}
+          </Text>
+          <Text as="span" bg="yellow">
+            {text  + " "}
+          </Text>
+          <Text as="span">
+            {afterText}
+          </Text></Text>
+          </Box>
+          <Box pos="absolute" h="200px" w="full" style={{ 
+            zIndex: 3,
+            background: `linear-gradient(transparent 0%, white)` 
+          }}>
+            <Flex w="full" h="full" align="flex-end" justify="flex-end">
+            <Button variant="outline"  w="120px" bg="white" color="teal" size="xs" onClick={() => {
+              setHighlightIntermediate(intermediateID)
+              setHighlightText(text)
+            }}>View</Button>
+            <Button variant="outline"  w="120px" bg="teal" color="white" size="xs" onClick={() => {}}>Create Annotation</Button>
+            </Flex>
+          </Box>
+        </Box>
+      </Box>)
 }
 
 const Report = () => {
@@ -127,6 +204,8 @@ const Report = () => {
   const [annotate, setAnnotate] = React.useState([])
   const [analyzeSentence, setAnalyzeSentence] = React.useState("");
   const [mapper, setMapper] = React.useState({})
+  const [highlightIntermediate, setHighlightIntermediate] = React.useState(null)
+  const [highlightText, setHighlightText] = React.useState(null)
   const sentenceUuid = md5(analyzeSentence)
   const sentenceResponse = useRecoilValue(requestState('REORDER-' + sentenceUuid))
   console.log('WE GET SENTENCE RESPONSE? ', sentenceResponse)
@@ -158,16 +237,20 @@ const Report = () => {
       setMapper(mp)
       setRequests(rs => [...rs, {
         id: 'REORDER-' + sentenceUuid,
-        prompt: "Reorder the following javascript array of statements based on how well they support the following summary sentence from most relevant to least relevant: \nSUMMARY SENTENCE: " + analyzeSentence,
+        prompt: "Reorder the following javascript array of statements based on how well they support the following summary sentence from most relevant to least relevant. Return your response as a javascript array: \nSUMMARY SENTENCE: " + analyzeSentence,
         context: "Related Sentences: " + JSON.stringify(relatedSentences),
       }])
     }
   }, [analyzeSentence, sentenceUuid, tryingThis, setRequests])
 
-  const report = !isEmpty(data) ? data.Get.Report[0] : {};
-  const text = report.text;
-  const sentences = report.text ? report.text.split("\n\n") : [];
+  const report = !isEmpty(data) ? data.Get.Report[0] : {}
+  const text = report.text
+  const sentences = report.text ? report.text.split("\n\n") : []
+  const intermediates = relatedData?.Get?.Intermediate || []
+  const reordereds = sentenceResponse.result ? JSON.parse(sentenceResponse.result) : []
+  console.log("REORDEDS? ", reordereds)
     return (
+      <>
     <Box>
       <Box
           m="10px"
@@ -192,9 +275,9 @@ const Report = () => {
             console.log("WHAT newSent IS: ", newSent)
             setAnalyzeSentence(newSent)
             fetchRelated()
-          }} /> : <Text fontWeight={'800'}>{text}</Text>}
+          }} /> : <Text>{text}</Text>}
         </Box>
-        <Box
+        {!isEmpty(analyzeSentence) && <Box
           pos="absolute"
           right="0px"
           top="0px"
@@ -208,14 +291,40 @@ const Report = () => {
           p={6} trapFocus={false} size="md" placement={'right'} onClose={()=> {}} isOpen={true}>
               <Text>{analyzeSentence}</Text>
               <Button m="20px" onClick={() => enhance(sentenceUuid, analyzeSentence, relatedData.Get.Intermediate, setRequests, setEnhanceRequests)}>Enhance Supporting Texts w/ AI</Button>
-              <Text fontWeight="800">Supporting Texts</Text>
-              {
-                relatedData && isEmpty(enhanceRequests) ? 
-                  relatedData.Get.Intermediate.map((r) => <Text mt="30px">{r.text}</Text>)
-                  : relatedData.Get.Intermediate.map((r) => <Text fontWeight="800" mt="30px">{r.text}</Text>)
+              { 
+                isEmpty(reordereds) && isEmpty(enhanceRequests) && intermediates.map((r) => <PreviewIntermediate text={r.text} intermediateID={r._additional.id} setHighlightIntermediate={setHighlightIntermediate} />)
               }
-        </Box>
+
+              {
+                isEmpty(reordereds) &&!isEmpty(enhanceRequests) &&
+                  intermediates.map((r) => <PromptControls id={'ENHANCE-' + r._additional.id} />)}
+              {
+                isEmpty(reordereds) && !isEmpty(sentenceResponse) && <PromptControls id={'REORDER-' + sentenceUuid} />
+              }
+              {
+                !isEmpty(reordereds) && reordereds.map(r => <PreviewAIEnhanced setHighlightText={setHighlightText} setHighlightIntermediate={setHighlightIntermediate} text={r} mapper={mapper} intermediates={intermediates} />)
+              }
+        </Box>}
       </Box>
+      {
+      !isEmpty(highlightIntermediate) && (
+        <Modal isOpen={!isEmpty(highlightIntermediate)} onClose={() => {setHighlightIntermediate(null)}}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Reader</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <IntermediatePreview id={highlightIntermediate} highlightText={highlightText} />
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme='blue' mr={3} onClick={() => {setHighlightIntermediate(null)}}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      )
+    }</>
     );
 
 
