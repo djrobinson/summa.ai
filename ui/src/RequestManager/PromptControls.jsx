@@ -91,7 +91,7 @@ const PromptControls = ({ id }) => {
     <Stack borderTop="solid 1px lightgray" pt="10px">
       <Flex justify="space-between" align="center">
         <Stack>
-        <Text fontWeight="800">Request {request.id.split('-')[0]}</Text>
+        <Text fontWeight="800">Request {request ? request.id.split('-')[0] : null}</Text>
           <Box>
           <StatusIcon status={request.status} />
           </Box>

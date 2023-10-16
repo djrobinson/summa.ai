@@ -38,9 +38,9 @@ const IntermediatePreview = ({ id, highlightText }) => {
     console.log("Intermediate Preview: ", data, error, loading);
     const intermediate = !isEmpty(data) && !isEmpty(data.Get.Intermediate) ? data.Get.Intermediate[0] : { text: ''};
     const passage = intermediate.text.replaceAll('\n', ' ')
-  const splitText = intermediate ? passage.split(highlightText) : ["", ""]
-  const afterText = splitText[1]
-  const beforeText = splitText[0].slice(splitText[0].length - 100, splitText[0].length)
+    const splitText = intermediate ? passage.split(highlightText) : ["", ""]
+    const afterText = splitText[1]
+    const beforeText = splitText[0]
   return (
     <Box p={6}>
         <Box mt="10px">

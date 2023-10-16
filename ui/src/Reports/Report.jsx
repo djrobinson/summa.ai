@@ -4,6 +4,7 @@ import {
   createPhase,
   deleteReport,
   createObject,
+  createRelationship,
 } from "../utils/weaviateServices";
 import { buildClientSchema, getIntrospectionQuery } from "graphql";
 import {TokenAnnotator, TextAnnotator} from 'react-text-annotate'
@@ -42,6 +43,7 @@ import { useRecoilState, useRecoilValue } from "recoil";
 import { apiKeyState, enhanceRequestResultsState, enhanceRequestsState, requestState, requestsState } from "../recoil/atoms";
 import PromptControls from "../RequestManager/PromptControls";
 import IntermediatePreview from "../components/IntermediatePreview";
+import HighlightText from "../components/HighlightText";
 
 const FETCH_REPORTS = gql`
   query getReport($id: String!) {
@@ -52,6 +54,16 @@ const FETCH_REPORTS = gql`
         }
         text
         title
+        annotations {
+          ... on Annotation {
+            _additional {
+              id
+            }
+            reportHighlightText
+            intermediateHighlightText
+            intermediateText
+          }
+        }
         workflow {
           ... on Workflow {
             _additional {
@@ -146,16 +158,14 @@ const PreviewIntermediate = ({ text, intermediateID, setHighlightIntermediate })
 
 }
 
-const PreviewAIEnhanced = ({text, mapper, intermediates, setHighlightIntermediate, setHighlightText}) => {
-  // console.log("MAPPER ", mapper)
-  console.log("MAPPER RESULT: ", mapper[text])
+const PreviewAIEnhanced = ({reportID, analyzeSentence, text, mapper, intermediates, setHighlightIntermediate, setHighlightText}) => {
   const intermediateID = mapper[text] ? mapper[text].replace('ENHANCE-', '') : null
   const related = mapper[text] ? intermediates.filter(i => i._additional.id === intermediateID) : []
+  const relatedIntId = related[0] ? related[0]._additional.id : null
   const passage = related[0].text.replaceAll('\n', ' ')
   const splitText = related[0] ? passage.split(text) : ["", ""]
   const afterText = splitText[1]
   const beforeText = splitText[0].slice(splitText[0].length - 100, splitText[0].length)
-  console.log('FULL RESULT: ', afterText)
   return (<Box h="200px">
         <Box pos="relative" w="full" bg="blue">
         <Box pos="absolute" h="200px" w="full" overflowY="hidden">
@@ -180,7 +190,31 @@ const PreviewAIEnhanced = ({text, mapper, intermediates, setHighlightIntermediat
               setHighlightIntermediate(intermediateID)
               setHighlightText(text)
             }}>View</Button>
-            <Button variant="outline"  w="120px" bg="teal" color="white" size="xs" onClick={() => {}}>Create Annotation</Button>
+            <Button variant="outline"  w="120px" bg="teal" color="white" size="xs" onClick={async () => {
+              const ann = await createObject("Annotation", {
+                intermediateText: passage,
+                reportHighlightText: analyzeSentence,
+                intermediateHighlightText: text,
+              });
+              console.log("ANN ", ann)
+              await createRelationship(
+                "Report",
+                reportID,
+                "annotations",
+                "Annotation",
+                ann.id,
+                "report"
+              );
+              await createRelationship(
+                "Intermediate",
+                relatedIntId,
+                "annotations",
+                "Annotation",
+                ann.id,
+                "intermediate"
+              );
+              console.log("DONE!")
+            }}>Create Annotation</Button>
             </Flex>
           </Box>
         </Box>
@@ -193,8 +227,10 @@ const Report = () => {
     variables: { id },
   });
   console.log("REPORT : ", data, error)
+  const reportAnnotations = data && data.Get.Report[0].annotations || []
   const dataSourcePhaseID = data && data.Get.Report[0].workflow[0].phases.filter(p => p.type === "DATA_SOURCE")[0]._additional.id
-  console.log("YOLO: ", dataSourcePhaseID)
+  const reportHighlights = reportAnnotations && reportAnnotations.length > 0 ? reportAnnotations : []
+  console.log("YOLO: ", reportHighlights)
   const apiKey = useRecoilValue(apiKeyState)
   const [requests, setRequests] = useRecoilState(requestsState);
   const [enhanceRequests, setEnhanceRequests] = useRecoilState(enhanceRequestsState);
@@ -275,7 +311,7 @@ const Report = () => {
             console.log("WHAT newSent IS: ", newSent)
             setAnalyzeSentence(newSent)
             fetchRelated()
-          }} /> : <Text>{text}</Text>}
+          }} /> : <HighlightText text={text} highlightTexts={reportHighlights} />}
         </Box>
         {!isEmpty(analyzeSentence) && <Box
           pos="absolute"
@@ -290,7 +326,7 @@ const Report = () => {
           overflow="scroll"
           p={6} trapFocus={false} size="md" placement={'right'} onClose={()=> {}} isOpen={true}>
               <Text>{analyzeSentence}</Text>
-              <Button m="20px" onClick={() => enhance(sentenceUuid, analyzeSentence, relatedData.Get.Intermediate, setRequests, setEnhanceRequests)}>Enhance Supporting Texts w/ AI</Button>
+              <Button m="20px" onClick={() => enhance(sentenceUuid, analyzeSentence, intermediates, setRequests, setEnhanceRequests)}>Enhance Supporting Texts w/ AI</Button>
               { 
                 isEmpty(reordereds) && isEmpty(enhanceRequests) && intermediates.map((r) => <PreviewIntermediate text={r.text} intermediateID={r._additional.id} setHighlightIntermediate={setHighlightIntermediate} />)
               }
@@ -302,7 +338,7 @@ const Report = () => {
                 isEmpty(reordereds) && !isEmpty(sentenceResponse) && <PromptControls id={'REORDER-' + sentenceUuid} />
               }
               {
-                !isEmpty(reordereds) && reordereds.map(r => <PreviewAIEnhanced setHighlightText={setHighlightText} setHighlightIntermediate={setHighlightIntermediate} text={r} mapper={mapper} intermediates={intermediates} />)
+                !isEmpty(reordereds) && reordereds.map(r => <PreviewAIEnhanced analyzeSentence={analyzeSentence} reportID={id} setHighlightText={setHighlightText} setHighlightIntermediate={setHighlightIntermediate} text={r} mapper={mapper} intermediates={intermediates} />)
               }
         </Box>}
       </Box>
