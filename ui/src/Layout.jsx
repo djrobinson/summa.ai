@@ -48,7 +48,7 @@ const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
     >
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
         <Text fontSize="3xl" fontFamily="monospace" fontWeight="bold">
-          <Link to="/">Summa</Link>
+          <Link to="/"><Text as="span" color="teal">Summa</Text><Text as="span" color="darkGray">.ai</Text></Link>
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
@@ -61,9 +61,6 @@ const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
       </NavItem>
       <NavItem>
         <Link to="/reports">Reports</Link>
-      </NavItem>
-      <NavItem>
-        <Link to="/requests">Requests</Link>
       </NavItem></>)}
       <NavItem>
         <Link to="/account">Account</Link>
@@ -138,7 +135,7 @@ const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
         fontFamily="monospace"
         fontWeight="bold"
       >
-        Summa
+        Summa.ai
       </Text>
 
       <HStack spacing={{ base: "0", md: "6" }}>
