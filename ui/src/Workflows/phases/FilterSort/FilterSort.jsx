@@ -127,10 +127,11 @@ const FilterSort = ({
   
   return (
     <Box w="600px">
-      <Box>
+      {/* <Box>
         <Code>{realQueryString}</Code>
-      </Box>
-      <Box h="300px">
+      </Box> */}
+
+      <Box h="200px">
         {[...Array(fieldFilterIndex)].map((item, i) => (
           <FilterOptions
             filterIndex={i}
@@ -159,7 +160,7 @@ const FilterSort = ({
           <Text pl="10px">Add Filter</Text>
         </Flex>
       </Box>
-      <Box h="370px" overflowY={"scroll"}>
+      <Box h="500px" overflowY={"scroll"}>
         <IntermediatesPreview intermediates={intermediates} />
       </Box>
 

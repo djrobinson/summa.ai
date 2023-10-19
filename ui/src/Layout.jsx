@@ -47,7 +47,7 @@ const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
       {...rest}
     >
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Text fontSize="3xl" fontFamily="monospace" fontWeight="bold">
+        <Text fontSize="3xl" >
           <Link to="/"><Text as="span" color="teal">Summa</Text><Text as="span" color="darkGray">.ai</Text></Link>
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />

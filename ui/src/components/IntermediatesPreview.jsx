@@ -18,10 +18,10 @@ import { isEmpty } from "lodash";
 const IntermediatesPreview = ({ intermediates }) => {
   return (
     <Box p={6}>
-      {intermediates.map((intermediate) => {
+      {intermediates.map((intermediate, i) => {
         return (
-          <Box mt="10px">
-            <Text>{intermediate._additional.id}</Text>
+          <Box mt="20px" borderBottom="solid 2px lightgray" p="4px" textAlign="justify">
+            <Text fontWeight="800" size="xs">Record #{i+1}</Text>
             <Text>{intermediate.text}</Text>
           </Box>
         );

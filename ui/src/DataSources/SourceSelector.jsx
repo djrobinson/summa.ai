@@ -25,7 +25,7 @@ import {
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
 
-const SourceSelector = ({ pasted, setDsID, setShowConfigure, setPasted }) => {
+const SourceSelector = ({ pasted, setPasted }) => {
   const [mode, setMode] = React.useState(null);
   // do initial query for data source. if it exists, set mode to that
   const updateAndBack = async () => {
@@ -43,8 +43,7 @@ const SourceSelector = ({ pasted, setDsID, setShowConfigure, setPasted }) => {
     // update the data source with the s3 url
     // set phase to Splitter
     console.log("res", res);
-    setShowConfigure(false);
-    setDsID(null);
+      // TODO: Need to redirect back to home url
   };
   return (
     <Box

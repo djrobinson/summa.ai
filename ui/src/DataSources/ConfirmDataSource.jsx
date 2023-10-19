@@ -19,6 +19,8 @@ import { isEmpty } from "lodash";
 import Checkmark from "../components/Checkmark";
 import IntermediatesPreview from "../components/IntermediatesPreview";
 import { FiRefreshCcw } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { createObject } from "../utils/weaviateServices";
 
 const FETCH_DATA_SOURCE = gql`
   query GetDataSource($id: String!) {
@@ -49,6 +51,8 @@ const ConfirmDataSource = ({ setShowConfigure, setDsID, dataSourceID }) => {
     }
   );
   console.log("Confirm Data Sources: ", data, error, loading);
+  const navigate = useNavigate()
+  const [workflowName, setWorkflowName] = React.useState('')
   React.useEffect(() => {
     fetchDataSources();
   }, []);
@@ -70,34 +74,36 @@ const ConfirmDataSource = ({ setShowConfigure, setDsID, dataSourceID }) => {
       p={6}
     >
       <Stack p="20px">
+      <Flex width="100%" align="center" justify="space-between">
         <Text
           color={"green.500"}
           textTransform={"uppercase"}
           fontWeight={800}
-          fontSize={"sm"}
+          fontSize={"md"}
           letterSpacing={1.1}
         >
           Preview your split
         </Text>
-        <Flex p="40px" justify={"center"}>
-          <Checkmark />
-        </Flex>
-        <Flex>
-          <Heading>Preview</Heading>
-          <Icon
+        <Icon
             onClick={() => fetchDataSources()}
             m="10px"
             as={FiRefreshCcw}
             w={6}
             h={6}
           />
+      
+          
         </Flex>
-        <Box h={"400px"} overflowY={"scroll"}>
+        <Box h={"590px"} overflowY={"scroll"}>
           <IntermediatesPreview intermediates={intermediates} />
         </Box>
+        <Input placeholder="Workflow Name..." onChange={e=> setWorkflowName(e.target.value)} />
         <Button
-          onClick={() => {
-            setShowConfigure(true);
+          onClick={async () => {
+            const wf = await createObject("Workflow", {
+              name: workflowName,
+            });
+            navigate(`/workflows/${wf.id}`)
           }}
           colorScheme="teal"
           variant="outline"

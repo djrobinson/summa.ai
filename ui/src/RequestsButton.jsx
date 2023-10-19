@@ -23,7 +23,10 @@ import { getTokenCount } from "./utils/tokenHelpers";
 const RequestsButton = () => {
     const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
     const rateLimit = useRecoilValue(rateLimitState)
-    const poller = useRecoilValue(clockState(2000))
+    const [lastMinuteTokens, setLastMinuteTokens] = React.useState(0)
+    const [showThrottleMessage, setShowThrottleMessage] = React.useState(0)
+    const [waitTime, setWaitTime] = React.useState(0)
+    const poller = useRecoilValue(clockState(1000))
     const runPending = useRecoilCallback(({set}) => async (rid) => {
         console.log('running ', rid)
         set(requestState(rid), (oldR) => ({ ...oldR, status: 'RUNNING', start: getUnixNow() }))
@@ -41,7 +44,7 @@ const RequestsButton = () => {
         const lastMinute = now - 60;
         const lastMinuteRequests = all.filter(r => r.start && r.start > lastMinute)
         const lastMinTokens = lastMinuteRequests.reduce((acc, r) => acc + getTokenCount(r.prompt + ' ' + r.context), 0)
-
+        
         let limit = rateLimit - lastMinTokens
         pendings.forEach((p) => {
             const tokens = getTokenCount(p.prompt + ' ' + p.context)
@@ -50,15 +53,26 @@ const RequestsButton = () => {
                 limit = limit - tokens
             }
         })
+        if (!nextUp.length && pendings.length) {
+            console.log("PENDINGS: ", lastMinuteRequests, pendings, nextUp)
+            const startsOnly = lastMinuteRequests.map(lmr => lmr.start)
+            const latest = Math.max(...startsOnly)
+            const secondsLeft = now - latest
+            setWaitTime(60 - secondsLeft)
+        } else {
+            setShowThrottleMessage(false)
+            setWaitTime(0)
+        }
+        setLastMinuteTokens(lastMinTokens)
         if (nextUp.length) {
             nextUp.forEach((p) => {
-                console.log("Wed run this: ", p)
                 runPending(p.id)
             })
         }
     }, [poller, all, rateLimit, pendings, runPending])
     return (
         <>
+        {showThrottleMessage ? <Text color="orange" fontWeight="800">Tokens/Minute limit reached. Waiting {waitTime} seconds for next batch...</Text> : null}
         <Stack align='center'>
             <IconButton
                 variant="ghost"
@@ -72,6 +86,11 @@ const RequestsButton = () => {
                 <Text mt='-3' fontSize="12px">Requests</Text>
             </Stack>
         </Stack>
+        <Box h="50px" bg="black" rounded={"lg"} w="180px" align="center" justify="center">
+            <Text color="lime" fontSize="12px" fontWeight="800">Tokens in Last Minute</Text>
+            <Text color="lime" fontSize="18px" fontWeight="300">{lastMinuteTokens} / {rateLimit} TPM</Text>
+        </Box>
+        
         <Stack>
             <Badge colorScheme='yellow'>
                 {pendings.length} Pending

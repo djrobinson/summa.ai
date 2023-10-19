@@ -199,7 +199,7 @@ export const allRequestStatuses = selector({
 
 export const rateLimitState = atom({
   key: 'rateLimitState',
-  default: 8192,
+  default: 10000,
 })
 
 

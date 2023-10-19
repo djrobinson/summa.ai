@@ -28,6 +28,7 @@ import { isValidLength } from "../utils/tokenHelpers";
 import DataSourceSplitWizard from "./DataSourceSplitWizard";
 import SourceSelector from "./SourceSelector";
 import ConfirmDataSource from "./ConfirmDataSource";
+import { useParams } from "react-router-dom";
 
 const FETCH_DATA_SOURCE = gql`
   {
@@ -48,19 +49,18 @@ const FETCH_DATA_SOURCE = gql`
 // https://codesandbox.io/s/assignment-121-animate-checkmark-solution-jggkm
 // Rework this for loading state
 
-const ConfigureDataSource = ({ uuid, setShowConfigure, setDsID }) => {
+const ConfigureDataSource = ({ }) => {
   const [pasted, setPasted] = React.useState("");
-
+  const { id } = useParams();
+  console.log('CONFIGURING THIS ONE: ', id)
   return (
     <Flex>
       <SourceSelector
         pasted={pasted}
         setPasted={setPasted}
-        setShowConfigure={setShowConfigure}
-        setDsID={setDsID}
       />
-      <DataSourceSplitWizard dataSourceID={uuid} inputText={pasted} />
-      <ConfirmDataSource dataSourceID={uuid} />
+      <DataSourceSplitWizard dataSourceID={id} inputText={pasted} />
+      <ConfirmDataSource dataSourceID={id} />
     </Flex>
   );
 };

@@ -9,6 +9,6 @@ export const getTokenCount = (value) => {
 
 export const isValidLength = (value) => {
     const tokenCount = getTokenCount(value);
-    if (tokenCount < 8192) return true;
+    if (tokenCount < 10000) return true;
     return false;
 }

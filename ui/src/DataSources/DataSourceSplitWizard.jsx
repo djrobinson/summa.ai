@@ -52,10 +52,6 @@ const SplitStrategy = ({ setSentenceCount, setSplitChar, splitChar }) => {
           min={1}
         >
           <NumberInputField />
-          <NumberInputStepper>
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
         </NumberInput>
         <FormLabel pl="5px">word chunks</FormLabel>
       </Flex>
@@ -176,7 +172,7 @@ const SplitWizard = ({ inputText, dataSourceID }) => {
         setSentenceCount={setSentenceCount}
         setSplitSections={setSplitSections}
       />
-      <Tabs align="center" h={"60%"}>
+      <Tabs align="center" h={"380px"}>
         <TabList>
           <Tab>Split Preview</Tab>
           <Tab>Raw Results</Tab>
