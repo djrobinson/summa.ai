@@ -11,7 +11,7 @@ import Phases from "./Phases";
 import { useRecoilState } from "recoil";
 import { showRequestManagerState } from "../recoil/atoms";
 
-const FETCH_WORKFLOWS = gql`
+export const FETCH_WORKFLOW = gql`
   query GetWorkflow($id: String!) {
     Get {
       Workflow(where: { operator: Equal, path: ["id"], valueString: $id }) {
@@ -36,7 +36,7 @@ const FETCH_WORKFLOWS = gql`
 const Workflow = ({}) => {
   const { id } = useParams();
   
-  const [fetchWorkflows, { data, error, loading }] = useLazyQuery(FETCH_WORKFLOWS, {
+  const [fetchWorkflows, { data, error, loading }] = useLazyQuery(FETCH_WORKFLOW, {
     variables: { id },
   });
   React.useEffect(() => {

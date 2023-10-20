@@ -51,3 +51,5 @@ add_prop = {"dataType": ["Phase"], "name": "phase"}
 client.schema.property.create("Intermediate", add_prop)
 add_prop = {"dataType": ["Phase"], "name": "phases"}
 client.schema.property.create("Workflow", add_prop)
+add_prop = {"dataType": ["Phase"], "name": "phase"}
+client.schema.property.create("Filter", add_prop)

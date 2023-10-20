@@ -24,7 +24,7 @@ import {
   createRelationship,
 } from "../../utils/weaviateServices";
 
-const FETCH_DATA_SOURCES = gql`
+export const FETCH_DATA_SOURCES = gql`
   {
     Get {
       DataSource {
@@ -37,7 +37,7 @@ const FETCH_DATA_SOURCES = gql`
   }
 `;
 
-const FETCH_DATA_SOURCE = gql`
+export const FETCH_DATA_SOURCE = gql`
   query GetDataSource($id: String!) {
     Get {
       DataSource(where: { operator: Equal, path: ["id"], valueString: $id }) {
@@ -62,6 +62,7 @@ const createPhaseVersion = async (workflowID, dataSource, intermediates) => {
   const phase = await createObject("Phase", {
     type: "DATA_SOURCE",
     selection: dataSource,
+    order: 1
   });
   const intermediateIDs = intermediates.map((intermediate) => {
     return intermediate._additional.id;
@@ -97,7 +98,7 @@ const DataSourceSelector = ({ id, refreshParent }) => {
   });
   React.useEffect(() => {
     fetchDataSources();
-  }, [dataSource]);
+  }, [dataSource, fetchDataSources]);
   const dataSources = !isEmpty(data) ? data.Get.DataSource : [];
   const intermediates =
     !isEmpty(dsData) && !isEmpty(dsData.Get.DataSource)

@@ -1,9 +1,8 @@
 import React from "react";
 import {
-  createWorkflow,
-  createPhase,
   deleteWorkflow,
   createObject,
+  createRelationship,
 } from "../utils/weaviateServices";
 import { buildClientSchema, getIntrospectionQuery } from "graphql";
 import axios from "axios";
@@ -18,10 +17,13 @@ import {
   Button,
   Input,
   FormLabel,
+  Select,
 } from "@chakra-ui/react";
-import { useLazyQuery, gql } from "@apollo/client";
+import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { Link, useNavigate } from "react-router-dom";
+import { FETCH_DATA_SOURCE, FETCH_DATA_SOURCES } from "./phases/DataSourceSelector";
+import { FETCH_WORKFLOW } from "./Workflow";
 
 const FETCH_WORKFLOWS = gql`
   {
@@ -46,6 +48,8 @@ const FETCH_WORKFLOWS = gql`
   }
 `;
 
+
+
 const WorkflowTile = ({
   phaseId,
   phase,
@@ -59,35 +63,60 @@ const WorkflowTile = ({
   return <Heading>Workflow Tile</Heading>;
 };
 
+const copyWorkflow = async (newWorkflowTitle, workflowToCopy, templateDataSource) => {
+  const wf = await createObject("Workflow", {
+    name: newWorkflowTitle,
+  });
+  console.log('CREATE WORKFLOW: ', wf)
+  await workflowToCopy.forEach(async (phaseToCopy) => {
+    delete phaseToCopy._additional
+    // if DATA_SOURCE, replace with templateDataSource
+    const phaseResult = await createObject("Phase", {
+      ...phaseToCopy
+    })
+    console.log('PHASE RESULT: ', phaseResult)
+    await createRelationship(
+      "Workflow",
+      wf.id,
+      "phases",
+      "Phase",
+      phaseResult.id,
+      "workflow"
+    );
+  })
+  console.log('successfully copied workflow!!!')
+  return wf.id
+}
+
 const WorkflowBuilder = () => {
   const navigate = useNavigate();
   const [phases, setPhases] = React.useState([]);
   const [schema, setSchema] = React.useState(null);
   const [types, setTypes] = React.useState({});
-  const [workflowId, setWorkflowId] = React.useState(null);
+  const [workflowToCopy, setWorkflowToCopy] = React.useState([])
+  const [newWorkflowTitle, setNewWorkflowTitle] = React.useState("");
+  const [copiedWorkflowTitle, setCopiedWorkflowTitle] = React.useState("");
   const [fetchWorkflows, { data, error, loading }] =
     useLazyQuery(FETCH_WORKFLOWS);
+  const [fetchCopyWorkflow, { data: copyWorkflowData, error: errorWorkflowData, loading: loadingWorkflowData }] =
+  useLazyQuery(FETCH_WORKFLOW, {
+    variables: { id: workflowToCopy },
+  });
+  const { data: dataSourceData, error: dataSourceError, loading: dataSourceLoading } = useQuery(FETCH_DATA_SOURCES)
   console.log("workflows: ", data, error, loading);
-  const [newWorkflowTitle, setNewWorkflowTitle] = React.useState("");
+  console.log("dataSourceData: ", dataSourceData);
+  console.log("copyWorkflowData: ", copyWorkflowData);
+  const copiedWorkflow = !isEmpty(copyWorkflowData) && !isEmpty(copyWorkflowData.Get.Workflow) ? copyWorkflowData.Get.Workflow[0].phases : []
+  console.log("copiedWorkflow: ", copiedWorkflow);
   const workflows = !isEmpty(data) ? data.Get.Workflow : [];
+  const dataSources = !isEmpty(dataSourceData) ? dataSourceData.Get.DataSource : []
+  React.useEffect(() => {
+    fetchCopyWorkflow()
+  }, [workflowToCopy, fetchCopyWorkflow])
   React.useEffect(() => {
     fetchWorkflows();
   }, [fetchWorkflows]);
-  const addPhase = async (p) => {
-    const phaseId = await createPhase(workflowId, p);
-    console.log("PRE PHASES: ", phases);
-    setPhases([
-      ...phases,
-      {
-        ...p,
-        _additional: {
-          id: phaseId,
-        },
-        mode: null,
-        result: null,
-      },
-    ]);
-  };
+
   React.useEffect(() => {
     async function getSchema() {
       const res = await axios.post("http://localhost:8080/v1/graphql", {
@@ -104,70 +133,133 @@ const WorkflowBuilder = () => {
       <Wrap>
         <Box
           m="10px"
-          maxW={"400px"}
+          maxW={"340px"}
           w={"95%"}
-          height={"400px"}
+          height={"340px"}
           // eslint-disable-next-line react-hooks/rules-of-hooks
           bg={useColorModeValue("white", "gray.900")}
           boxShadow={"2xl"}
           rounded={"md"}
           p={6}
         >
-          <Heading>+ New Workflow</Heading>
+          <Text fontWeight="800">+ New Workflow</Text>
           <Text mt="40px" p="5px">
             Workflows allow you to run complex reasoning tasks against various
             data sources using Open AI's GPT-4 model.
           </Text>
           <FormLabel size="xs">Workflow Name:</FormLabel>
+         
+          <Flex justify="flex-end">
           <Input
+            placeholder="Name..."
             value={newWorkflowTitle}
             onChange={(e) => setNewWorkflowTitle(e.target.value)}
           />
-          <Flex justify="flex-end">
             <Button
+              ml="10px"
               onClick={async () => {
                 const wf = await createObject("Workflow", {
                   name: newWorkflowTitle,
                 });
                 console.log("NEW WF: ", `/workflows/${wf.id}`);
-
                 navigate(`/workflows/${wf.id}`);
               }}
               colorScheme="teal"
               alignSelf="end"
-              mt="40px"
             >
               Create
             </Button>
           </Flex>
         </Box>
+        <Box
+          m="10px"
+          maxW={"340px"}
+          w={"95%"}
+          height={"340px"}
+          // eslint-disable-next-line react-hooks/rules-of-hooks
+          bg={useColorModeValue("white", "gray.900")}
+          boxShadow={"2xl"}
+          rounded={"md"}
+          p={6}
+        >
+          <Text fontWeight="800">+ Create from Template</Text>
+          <FormLabel size="xs">Template:</FormLabel>
+          <Select
+            placeholder="Copy from Workfow..."
+            onChange={(e) => {
+                setWorkflowToCopy(e.target.value)
+            }}
+            value={workflowToCopy}
+          >
+            {workflows.map((k) => (
+              <option value={k._additional.id}>{k.name}</option>
+            ))}
+          </Select>
+          <FormLabel size="xs">Data Source
+          </FormLabel>
+          <Select
+            placeholder="Template..."
+            onChange={(e) => {
+
+            }}
+
+          >
+            {dataSources.map((k) => (
+              <option value={k._additional.id}>{k.name}</option>
+            ))}
+          </Select>
+          <FormLabel pt="10px" size="xs">Workflow Name:</FormLabel>
+          
+          <Flex justify="flex-end">
+          <Input
+            placeholder="Name..."
+            value={copiedWorkflowTitle}
+            onChange={(e) => setCopiedWorkflowTitle(e.target.value)}
+          />
+            <Button
+              ml="10px"
+              onClick={async () => {
+                const wf = await copyWorkflow(copiedWorkflowTitle, copiedWorkflow, null)
+                console.log("NEW WF: ", `/workflows/${wf}`);
+
+                navigate(`/workflows/${wf}`);
+              }}
+              colorScheme="teal"
+              alignSelf="end"
+            >
+              Create
+            </Button>
+          </Flex>
+          
+        </Box>
         {workflows.map((w) => (
           <Box
             m="10px"
-            maxW={"400px"}
+            maxW={"340px"}
             w={"95%"}
-            height={"400px"}
+            height={"340px"}
             // eslint-disable-next-line react-hooks/rules-of-hooks
             bg={useColorModeValue("white", "gray.900")}
             boxShadow={"2xl"}
             rounded={"md"}
             p={6}
           >
-            <Heading>{w.name}</Heading>
-            <Flex justify="flex-end">
-              <Button
+            <Text fontSize="xl" fontWeight="bold">{w.name}</Text>
+            <Text pt="30px" align="justify">{w.description}</Text>
+            <Flex pt="30px" justify="space-around">
+              <Button size="sm"
                 onClick={() => {
                   deleteWorkflow(w._additional.id, fetchWorkflows);
                 }}
                 colorScheme="red"
-                mt="40px"
-                mr="10px"
               >
                 Delete
               </Button>
-              <Link to={`${w._additional.id}`} colorScheme="teal" mt="40px">
+              <Button size="sm" bg="teal" color="white">
+              <Link to={`${w._additional.id}`}  mt="40px">
                 Edit
               </Link>
+              </Button>
             </Flex>
           </Box>
         ))}

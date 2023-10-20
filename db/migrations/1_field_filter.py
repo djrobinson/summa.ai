@@ -36,11 +36,11 @@ object = {
     "properties": [
         {
             "dataType": ["text"],
-            "name": "key",
+            "name": "operator",
         },
         {
             "dataType": ["text"],
-            "name": "filter",
+            "name": "objectPath",
         },
         {
             "dataType": ["text"],

@@ -1,8 +1,5 @@
 import React from "react";
 import {
-  createReport,
-  createPhase,
-  deleteReport,
   createObject,
 } from "../utils/weaviateServices";
 import { buildClientSchema, getIntrospectionQuery } from "graphql";

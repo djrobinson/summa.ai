@@ -1,8 +1,5 @@
 import React from "react";
 import {
-  createReport,
-  createPhase,
-  deleteReport,
   createObject,
   createRelationship,
 } from "../utils/weaviateServices";

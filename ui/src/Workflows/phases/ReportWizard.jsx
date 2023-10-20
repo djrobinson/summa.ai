@@ -59,7 +59,7 @@ const ReportWizard = ({ workflowID, phaseID, prevPhaseID }) => {
             </Card>
             <Card>
                 <CardHeader>
-                <Heading size='md'>Bullet Points</Heading>~
+                <Heading size='md'>Bullet Points</Heading>
                 </CardHeader>
                 <CardBody>
                 <Text>Iterate over a specified number of upstream datapoints to provide a bullet pointed summary of each.</Text>

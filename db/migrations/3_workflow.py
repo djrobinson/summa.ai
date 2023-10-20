@@ -13,6 +13,10 @@ object = {
         {
             "name": "name",
             "dataType": ["text"],
+        },
+        {
+            "name": "description",
+            "dataType": ["text"],
         }
     ],
 }

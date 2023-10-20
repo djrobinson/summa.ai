@@ -49,7 +49,7 @@ const FETCH_DATA_SOURCE = gql`
 // https://codesandbox.io/s/assignment-121-animate-checkmark-solution-jggkm
 // Rework this for loading state
 
-const ConfigureDataSource = ({ }) => {
+const ConfigureDataSource = () => {
   const [pasted, setPasted] = React.useState("");
   const { id } = useParams();
   console.log('CONFIGURING THIS ONE: ', id)

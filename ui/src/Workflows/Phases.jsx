@@ -22,7 +22,6 @@ import {
 } from "@chakra-ui/react";
 import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
-import { useParams } from "react-router-dom";
 import StaticDataSource from "./phases/StaticDataSource";
 import Checkmark from "../components/Checkmark";
 import FilterSort from "./phases/FilterSort/FilterSort";
@@ -43,8 +42,6 @@ import ReportWizard from "./phases/ReportWizard";
 
 // s3 objects will be named based on phase id. Shouldn't have to store this on the Phase
 
-const optionsBuilder = (phase) => {};
-
 const Phases = ({ phases, workflowID }) => {
   const [inMemoryPhases, setInMemoryPhases] = React.useState([]);
   const allPs = phases.map(
@@ -56,13 +53,10 @@ const Phases = ({ phases, workflowID }) => {
   );
   const addPhase = async (p) => {
     const phaseId = await createPhase(workflowID, p);
-    console.log("PRE PHASES: ", phases);
     p._additional = { id: phaseId };
     const newPhases = [...inMemoryPhases, {...p }]
-    console.log("POST PHASES: ", newPhases);
     setInMemoryPhases(newPhases);
   };
-  console.log('${allPs.join(",") ', allPs.join(","));
   const FETCH_PHASE_INTERMEDIATES = gql`
   query GetPhaseIntermediates {
     Get {
@@ -71,11 +65,20 @@ const Phases = ({ phases, workflowID }) => {
           id
         }
         type
+        filters {
+          ... on Filter {
+            _additional {
+              id
+            }
+            operator
+            objectPath
+            value
+          }
+        }
       }
     }
   }
 `;
-  console.log("FETCH_PHASE_INTERMEDIATES ", FETCH_PHASE_INTERMEDIATES);
 
   const { data, error, loading } = useQuery(FETCH_PHASE_INTERMEDIATES);
 
@@ -86,9 +89,12 @@ const Phases = ({ phases, workflowID }) => {
     }
   }, [data]);
 
+
+
   return (
     <Flex overflowX="scroll">
       {inMemoryPhases.map((phase, i) => {
+        const prevPhaseID = inMemoryPhases[i - 1] ? inMemoryPhases[i - 1]._additional.id : null
         const elements = [];
         if (phase.type === "DATA_SOURCE") {
           elements.push(
@@ -138,7 +144,7 @@ const Phases = ({ phases, workflowID }) => {
             >
               <FilterSort
                 phase={phase}
-                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+                prevPhaseID={prevPhaseID}
               />
             </Box>
           );
@@ -157,7 +163,7 @@ const Phases = ({ phases, workflowID }) => {
             >
               <MultiPromptWizard
                 phaseID={phase._additional.id}
-                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+                prevPhaseID={prevPhaseID}
               />
             </Box>
           );
@@ -176,7 +182,7 @@ const Phases = ({ phases, workflowID }) => {
             >
               <CombineWizard
                 phaseID={phase._additional.id}
-                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+                prevPhaseID={prevPhaseID}
               />
             </Box>
           );
@@ -195,7 +201,7 @@ const Phases = ({ phases, workflowID }) => {
             >
               <SplitWizard
                 phaseID={phase._additional.id}
-                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+                prevPhaseID={prevPhaseID}
               />
             </Box>
           );
@@ -214,9 +220,9 @@ const Phases = ({ phases, workflowID }) => {
             >
               <ReportWizard
                 phaseID={phase._additional.id}
-                prevPhaseID={inMemoryPhases[i - 1]._additional.id}
+                prevPhaseID={prevPhaseID}
                 workflowID={workflowID}
-                />
+              />
             </Box>
           );
         }
@@ -224,16 +230,6 @@ const Phases = ({ phases, workflowID }) => {
           <Flex w="120px" h="800px" align="center" justify="center">
             <Stack>
               <Icon as={BsArrowRight} h="40px" w="120px" />
-              {/* <Stack align="center" justify="center">
-                <Icon
-                  color="black"
-                  as={GoGitBranch}
-                  h="20px"
-                  w="20px"
-                  mt="80px"
-                />
-                <Text align="center">Split Workstream</Text>
-              </Stack> */}
             </Stack>
           </Flex>
         );
@@ -260,6 +256,7 @@ const Phases = ({ phases, workflowID }) => {
               onClick={() => {
                 addPhase({
                   type: "LLM_PROMPT",
+                  order: inMemoryPhases.length + 1
                 });
               }}
             >
@@ -290,6 +287,7 @@ const Phases = ({ phases, workflowID }) => {
               onClick={() => {
                 addPhase({
                   type: "SPLIT",
+                  order: inMemoryPhases.length + 1
                 });
               }}
             >
@@ -305,6 +303,7 @@ const Phases = ({ phases, workflowID }) => {
               onClick={() => {
                 addPhase({
                   type: "COMBINE",
+                  order: inMemoryPhases.length + 1
                 });
               }}
             >
@@ -320,6 +319,7 @@ const Phases = ({ phases, workflowID }) => {
               onClick={() => {
                 addPhase({
                   type: "REPORT",
+                  order: inMemoryPhases.length + 1
                 });
               }}
             >

@@ -1,6 +1,6 @@
 import React from "react";
 import { buildSimpleGraphQLQuery } from "../../../utils/graphqlBuilder";
-import { batchCreate, createOneToMany } from "../../../utils/weaviateServices";
+import { batchCreate, createObject, createOneToMany, createRelationship } from "../../../utils/weaviateServices";
 
 import {
   Text,
@@ -13,26 +13,56 @@ import {
 } from "@chakra-ui/react";
 
 import { isEmpty } from "lodash";
-import FilterSortChoice from "./FilterSortChoice";
 import { gql, useLazyQuery, useQuery } from "@apollo/client";
-import { isValidLength } from "../../../utils/tokenHelpers";
 import IntermediatesPreview from "../../../components/IntermediatesPreview";
 import FilterOptions from "./FilterSortOptions";
 import { AddIcon } from "@chakra-ui/icons";
 import { apiKeyState } from "../../../recoil/atoms";
 import { useRecoilValue } from "recoil";
 
-const go = async (phase, data, finalContexts, finalString, combine = false) => {
+const go = async (phase, data, finalContexts, finalString, filters, searches, limit, combine = false) => {
+  console.log("FILTERS: ", filters, searches)
+  const filteredFilters = filters.Intermediate.filter(f => f.valueText !== phase._additional.id)
+  if (!isEmpty(searches)) {
+    const filter = await createObject('Filter', {
+      operator: 'nearText',
+      objectPath: searches.nearText.path,
+      value: searches.nearText.concept
+    })
+    console.log("CREATING SEARCH: ", filter)
+    await createRelationship(
+      "Filter",
+      filter.id,
+      "phase",
+      "Phase",
+      phase._additional.id,
+      "filters"
+    );
+  }
+
+  await filteredFilters.forEach(async (fil) => {
+    const filter = await createObject('Filter', {
+      operator: fil.operator,
+      objectPath: fil.path.join('.'),
+      value: fil.valueText
+    })
+    console.log("CREATING FILTER: ", filter)
+    await createRelationship(
+      "Filter",
+      filter.id,
+      "phase",
+      "Phase",
+      phase._additional.id,
+      "filters"
+    );
+  })
   if (!isEmpty(data) && !combine) {
     localStorage.setItem(phase._additional.id, finalString);
     const restructured = finalContexts.map((c, i) => ({
       text: c,
       order: i+1
     }));
-    console.log("phase._additional.id ", phase._additional.id);
-    console.log("refactor restructured: ", restructured);
     const res = await batchCreate("Intermediate", restructured);
-    console.log("INTERMEDIATE RES: ", res);
     const intermediateIDs = res.map((r) => r.id);
     await createOneToMany(
       "Phase",
@@ -44,7 +74,6 @@ const go = async (phase, data, finalContexts, finalString, combine = false) => {
     );
   }
   if (!isEmpty(data) && combine) {
-    console.log("onlyOne ", phase._additional.id);
     localStorage.setItem(phase._additional.id, finalString);
     const onlyOne = [
       {
@@ -52,7 +81,6 @@ const go = async (phase, data, finalContexts, finalString, combine = false) => {
       },
     ];
     const res = await batchCreate("Intermediate", onlyOne);
-    console.log("INTERMEDIATE RES onlyOne: ", res);
     const intermediateIDs = res.map((r) => r.id);
     await createOneToMany(
       "Phase",
@@ -73,21 +101,36 @@ const FilterSort = ({
     "Intermediate.phase": { type: "Phase", properties: ["title"]}
   },
 }) => {
+  console.log('PHASE: ', phase)
+  const onlyUserFacing = phase.filters ? phase.filters.filter(f => f.valueText !== phase._additional.id && f.operator !== 'nearText') : []
+  const defaultFilters = onlyUserFacing.map(f => ({
+    path: f.objectPath.split('.'),
+    operator: f.operator,
+    valueText: f.value
+  }))
+  const onlySearches = phase.filters ? phase.filters.filter(f => f.operator === 'nearText') : []
+  const defaultSearch = !isEmpty(onlySearches) ? {
+    nearText: {
+      path: onlySearches[0].objectPath,
+      concept: onlySearches[0].value
+     }} : {}
   const apiKey = useRecoilValue(apiKeyState)
-  const [fieldFilterIndex, setFieldFilterIndex] = React.useState(0); // 1 because we always want to have at least one filter
+  const [fieldFilterIndex, setFieldFilterIndex] = React.useState(defaultFilters.length - 1 + !isEmpty(defaultSearch) || 1);
   const [filters, setFilters] = React.useState({
     Intermediate: [
       {
-        path: ["phase", "Phase", "id"],
+        path: ["phase", "Phase", "id"]  ,
         operator: 'Equal',
         valueText: prevPhaseID,
       },
+      ...defaultFilters
     ],
   });
-  // TODO: CREATE DIFFERENT INPUTS FOR EACH TYPE IN FILTEROPTIONS.JSX AND SET THESE ACCORDINGLY
-  const [searches, setSearches] = React.useState({});
+
+  const [searches, setSearches] = React.useState(defaultSearch);
   const [sorts, setSorts] = React.useState([]);
   const [limit, setLimit] = React.useState(0);
+  console.log('FILTERS: ', filters, searches)
 
   const realQueryString = buildSimpleGraphQLQuery(
     fields,
@@ -96,7 +139,6 @@ const FilterSort = ({
     sorts,
     limit
   );
-  console.log("INTERMEDIATE QUERY: ", realQueryString);
   const { data, error, loading } = useQuery(
     gql`
       ${realQueryString}
@@ -127,10 +169,6 @@ const FilterSort = ({
   
   return (
     <Box w="600px">
-      {/* <Box>
-        <Code>{realQueryString}</Code>
-      </Box> */}
-
       <Box h="200px">
         {[...Array(fieldFilterIndex)].map((item, i) => (
           <FilterOptions
@@ -167,7 +205,7 @@ const FilterSort = ({
       <Flex mt="10px">
         <Button
           onClick={async () => {
-            await go(phase, data, finalContexts, finalString, false);
+            await go(phase, data, finalContexts, finalString, filters, searches, limit, false);
           }}
           colorScheme="teal"
           rounded="full"

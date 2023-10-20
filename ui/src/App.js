@@ -15,6 +15,7 @@ import { apiKeyState } from "./recoil/atoms";
 import ReportsHome from "./Reports/ReportsHome";
 import Report from "./Reports/Report";
 import ConfigureDataSource from "./DataSources/ConfigureDataSource";
+import DataSourcesHome from "./DataSources/DataSourceHome";
 
 
 export default function App() {
@@ -49,7 +50,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="/workflows" element={<WorkflowBuilder />} />
           <Route path="/workflows/:id" element={<Workflow />} />
-          <Route path="/data" element={<DataSources />} />
+          <Route path="/data" element={<DataSourcesHome />} />
           <Route path="/data/:id" element={<ConfigureDataSource />} />
           <Route path="/reports" element={<ReportsHome />} />
           <Route path="/reports/:id" element={<Report />} />

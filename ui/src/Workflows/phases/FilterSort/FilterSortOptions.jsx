@@ -76,7 +76,6 @@ const FilterOptions = ({
 }) => {
   const [selectedType, setSelectedType] = React.useState(null); // [type, setSelectedType] = useState(null)
   const [topPath, setTopPath] = React.useState(null);
-  console.log('FILTERS: ', filters)
   return (
     <Flex p="4px">
     <Select

@@ -33,6 +33,10 @@ object = {
         {
             "name": "phases",
             "dataType": ["Phase"],
+        },
+        {
+            "name": "order",
+            "dataType": ["int"]
         }
     ],
 }

@@ -33,6 +33,10 @@ object = {
             "dataType": ["text"],
         },
         {
+            "name": "public",
+            "dataType": ["boolean"],
+        },
+        {
             "name": "items",
             "dataType": ["ReportItem"],
         },

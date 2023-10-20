@@ -44,6 +44,7 @@ const FETCH_DATA_SOURCE = gql`
 `;
 
 const ConfirmDataSource = ({ setShowConfigure, setDsID, dataSourceID }) => {
+  console.log('dataSourceID ', dataSourceID)
   const [fetchDataSources, { data, error, loading }] = useLazyQuery(
     FETCH_DATA_SOURCE,
     {
