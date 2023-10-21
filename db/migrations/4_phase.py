@@ -39,6 +39,18 @@ object = {
             "name": "filters",
         },
         {
+            "dataType": ["Search"],
+            "name": "searches",
+        },
+        {
+            "dataType": ["Sort"],
+            "name": "sorts",
+        },
+        {
+            "dataType": ["int"],
+            "name": "limit",
+        },
+        {
             "dataType": ["Workflow"],
             "name": "workflow",
         },
@@ -53,3 +65,9 @@ add_prop = {"dataType": ["Phase"], "name": "phases"}
 client.schema.property.create("Workflow", add_prop)
 add_prop = {"dataType": ["Phase"], "name": "phase"}
 client.schema.property.create("Filter", add_prop)
+add_prop = {"dataType": ["Phase"], "name": "phase"}
+client.schema.property.create("Search", add_prop)
+add_prop = {"dataType": ["Phase"], "name": "phase"}
+client.schema.property.create("Limit", add_prop)
+add_prop = {"dataType": ["Phase"], "name": "phase"}
+client.schema.property.create("Sort", add_prop)

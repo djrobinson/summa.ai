@@ -61,6 +61,9 @@ const createFilters = (filters, key, value, field, index) => {
   };
 };
 
+// TODO: This component is weird and should be refactored
+// probably makes sense to have the "type" switch happen up
+// higher
 const FilterOptions = ({
   filterIndex,
   type,
@@ -74,7 +77,7 @@ const FilterOptions = ({
   setSearches,
   setLimit
 }) => {
-  const [selectedType, setSelectedType] = React.useState(null); // [type, setSelectedType] = useState(null)
+  const [selectedType, setSelectedType] = React.useState(null);
   const [topPath, setTopPath] = React.useState(null);
   return (
     <Flex p="4px">
@@ -92,7 +95,7 @@ const FilterOptions = ({
       
       {selectedType === 'Filter' && (
         <>
-        <Select
+          <Select
             placeholder="Filter type..."
             onChange={(e) => {
               const newFilters = createFilters(

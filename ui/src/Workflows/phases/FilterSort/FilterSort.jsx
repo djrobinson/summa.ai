@@ -20,25 +20,25 @@ import { AddIcon } from "@chakra-ui/icons";
 import { apiKeyState } from "../../../recoil/atoms";
 import { useRecoilValue } from "recoil";
 
-const go = async (phase, data, finalContexts, finalString, filters, searches, limit, combine = false) => {
+const generateContext = async (phase, data, finalContexts, finalString, filters, searches, combine = false) => {
   console.log("FILTERS: ", filters, searches)
   const filteredFilters = filters.Intermediate.filter(f => f.valueText !== phase._additional.id)
   if (!isEmpty(searches)) {
-    const filter = await createObject('Filter', {
-      operator: 'nearText',
+    const filter = await createObject('Search', {
       objectPath: searches.nearText.path,
       value: searches.nearText.concept
     })
     console.log("CREATING SEARCH: ", filter)
     await createRelationship(
-      "Filter",
+      "Search",
       filter.id,
       "phase",
       "Phase",
       phase._additional.id,
-      "filters"
+      "search"
     );
   }
+
 
   await filteredFilters.forEach(async (fil) => {
     const filter = await createObject('Filter', {
@@ -102,20 +102,53 @@ const FilterSort = ({
   },
 }) => {
   console.log('PHASE: ', phase)
-  const onlyUserFacing = phase.filters ? phase.filters.filter(f => f.valueText !== phase._additional.id && f.operator !== 'nearText') : []
-  const defaultFilters = onlyUserFacing.map(f => ({
-    path: f.objectPath.split('.'),
-    operator: f.operator,
-    valueText: f.value
+  // 1. Extract all filters, search, limits, sorts
+  // 2. Set defaults
+  // 3. Create a megadefault with everything
+  // 4. Iterate over it all
+  // 5. setFieldFilterIndex to megadefault length
+  // Filter Shape
+  // {
+  //   path: ["phase", "Phase", "id"]  ,
+  //   operator: 'Equal',
+  //   valueText: prevPhaseID,
+  // }
+  const defaultFiltersRaw = !isEmpty(phase.filters) ? phase.filters : []
+  const defaultFilters = defaultFiltersRaw.map(dfr => ({
+    path: dfr.objectPath.split(','),
+    operator: dfr.operator,
+    valueText: dfr.value
   }))
-  const onlySearches = phase.filters ? phase.filters.filter(f => f.operator === 'nearText') : []
-  const defaultSearch = !isEmpty(onlySearches) ? {
+  // Search Shape
+  // {
+  //   nearText: {
+  //     path: 'text',
+  //     concept: 'test'
+  //   }
+  // }
+  const defaultSearchesRaw = !isEmpty(phase.searches) ? phase.searches : []
+  const defaultSearches = defaultSearchesRaw.map(dsr => ({
     nearText: {
-      path: onlySearches[0].objectPath,
-      concept: onlySearches[0].value
-     }} : {}
+      path: dsr.objectPath,
+      concept: dsr.concept
+    }
+  }))
+  const defaultSearch = defaultSearches.length ? defaultSearches[0] : {}
+  // Sorts shape
+  // {
+  //    path: 'text',
+  //    order: 'desc'
+  // }
+  const defaultSortsRaw = !isEmpty(phase.sorts) ? phase.sorts : []
+  const defaultSorts = defaultSortsRaw.map(dsr => ({
+    path: dsr.objectPath,
+    order: dsr.order
+  }))
+  const defaultLimit = phase.limit
+  const allDefaults = [...defaultFilters, ...defaultSearches, ...defaultSorts]
+  console.log('ALL DEFAULTS ', allDefaults)
   const apiKey = useRecoilValue(apiKeyState)
-  const [fieldFilterIndex, setFieldFilterIndex] = React.useState(defaultFilters.length - 1 + !isEmpty(defaultSearch) || 1);
+  const [fieldFilterIndex, setFieldFilterIndex] = React.useState(allDefaults.length + !isEmpty(defaultLimit) * 1);
   const [filters, setFilters] = React.useState({
     Intermediate: [
       {
@@ -129,7 +162,7 @@ const FilterSort = ({
 
   const [searches, setSearches] = React.useState(defaultSearch);
   const [sorts, setSorts] = React.useState([]);
-  const [limit, setLimit] = React.useState(0);
+  const [limit, setLimit] = React.useState(defaultLimit);
   console.log('FILTERS: ', filters, searches)
 
   const realQueryString = buildSimpleGraphQLQuery(
@@ -170,11 +203,12 @@ const FilterSort = ({
   return (
     <Box w="600px">
       <Box h="200px">
+      
         {[...Array(fieldFilterIndex)].map((item, i) => (
           <FilterOptions
             filterIndex={i}
             type={"Intermediate"}
-            fields={["text", "order"]}
+            fields={["text"]}
             filters={filters}
             setFilters={setFilters}
             sorts={sorts}
@@ -205,7 +239,7 @@ const FilterSort = ({
       <Flex mt="10px">
         <Button
           onClick={async () => {
-            await go(phase, data, finalContexts, finalString, filters, searches, limit, false);
+            await generateContext(phase, data, finalContexts, finalString, filters, searches, limit, false);
           }}
           colorScheme="teal"
           rounded="full"

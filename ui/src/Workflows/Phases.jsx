@@ -67,12 +67,26 @@ const Phases = ({ phases, workflowID }) => {
         type
         filters {
           ... on Filter {
-            _additional {
-              id
-            }
             operator
             objectPath
             value
+          }
+        }
+        search {
+          ... on Search {
+            objectPath
+            value
+          }
+        }
+        limit {
+          ... on Limit {
+            value
+          }
+        }
+        sorts {
+          ... on Sort {
+            objectPath
+            order
           }
         }
       }
