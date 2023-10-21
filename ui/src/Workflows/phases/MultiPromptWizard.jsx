@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { isValidLength } from "../../utils/tokenHelpers";
 import { gql, useQuery } from "@apollo/client";
-import { createObject, createRelationship } from "../../utils/weaviateServices";
+import { createObject, createRelationship, updatePhase } from "../../utils/weaviateServices";
 import IntermediatesPreview from "../../components/IntermediatesPreview";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { requestState, requestsState } from "../../recoil/atoms";
@@ -41,8 +41,10 @@ export const GET_INTERMEDIATES = gql`
 
 
 
-const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
-  const [summarizingPrompt, setSummarizingPrompt] = React.useState("");
+const MultiPromptWizard = ({ phase, phaseID, prevPhaseID }) => {
+  const multiPrompt = phase.prompt
+  console.log("MULTIPROMPT PHASE: ", multiPrompt)
+  const [summarizingPrompt, setSummarizingPrompt] = React.useState(multiPrompt);
   const [requests, setRequests] = useRecoilState(requestsState);
   const [showManager, setShowManager] = React.useState(false);
   const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
@@ -77,16 +79,18 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
   console.log("CONTEXTS: ", contexts);
   return (
     <Box w="600px">
-      <Heading>Multi Prompt Wizard</Heading>
-      {/* {currData && currData.Get.Phase[0].intermediates && (
-        <IntermediatesPreview intermediates={currData.Get.Phase[0].intermediates} />)} */}
+      
         <>
           <FormLabel>Summarizing Prompt:</FormLabel>
           <Textarea
             value={summarizingPrompt}
             onChange={(e) => setSummarizingPrompt(e.target.value)}
           />
-          <Box h="530px" mt="10px" overflowY="scroll">
+          {currData && currData.Get.Phase[0].intermediates ? (
+            <Box h="530px" mt="10px" overflowY="scroll">
+            <IntermediatesPreview intermediates={currData.Get.Phase[0].intermediates} />
+            </Box>
+          ) : ( <Box h="530px" mt="10px" overflowY="scroll">
             {contexts &&
               contexts.slice(0, 100).map((d, i) => {
                 if (showManager) {
@@ -109,7 +113,7 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
                   </Box>
                 )
               })}
-          </Box>
+          </Box>)}
         </>
       <Flex>
         <Button
@@ -117,7 +121,10 @@ const MultiPromptWizard = ({ phaseID, prevPhaseID }) => {
           colorScheme="teal"
           rounded={"full"}
           flex={"1 0 auto"}
-          onClick={() => {
+          onClick={async () => {
+            const updatedPhase = { type: phase.type, prompt: summarizingPrompt }
+            console.log("updatedPhase ", updatedPhase)
+            await updatePhase(phase._additional.id, updatedPhase)
             setShowManager(true)
             setRequests([...requests, ...contexts])
           }}

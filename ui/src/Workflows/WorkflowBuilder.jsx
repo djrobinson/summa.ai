@@ -23,7 +23,6 @@ import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { Link, useNavigate } from "react-router-dom";
 import { FETCH_DATA_SOURCE, FETCH_DATA_SOURCES } from "./phases/DataSourceSelector";
-import { FETCH_WORKFLOW } from "./Workflow";
 
 const FETCH_WORKFLOWS = gql`
   {
@@ -41,6 +40,28 @@ const FETCH_WORKFLOWS = gql`
             title
             mode
             type
+            prompt
+            order
+            filters {
+              ... on Filter {
+                operator
+                objectPath
+                value
+              }
+            }
+            searches {
+              ... on Search {
+                objectPath
+                value
+              }
+            }
+            sorts {
+              ... on Sort {
+                objectPath
+                order
+              }
+            }
+            limit
           }
         }
       }
@@ -48,6 +69,51 @@ const FETCH_WORKFLOWS = gql`
   }
 `;
 
+
+const FETCH_WORKFLOW = gql`
+  query GetWorkflow($id: String!) {
+    Get {
+      Workflow(where: { operator: Equal, path: ["id"], valueString: $id }) {
+        _additional {
+          id
+        }
+        name
+        phases {
+          ... on Phase {
+            _additional {
+              id
+            }
+            title
+            mode
+            type
+            prompt
+            order
+            filters {
+              ... on Filter {
+                operator
+                objectPath
+                value
+              }
+            }
+            searches {
+              ... on Search {
+                objectPath
+                value
+              }
+            }
+            sorts {
+              ... on Sort {
+                objectPath
+                order
+              }
+            }
+            limit
+          }
+        }
+      }
+    }
+  }
+`;
 
 
 const WorkflowTile = ({
@@ -70,6 +136,9 @@ const copyWorkflow = async (newWorkflowTitle, workflowToCopy, templateDataSource
   console.log('CREATE WORKFLOW: ', wf)
   await workflowToCopy.forEach(async (phaseToCopy) => {
     delete phaseToCopy._additional
+    delete phaseToCopy.searches
+    delete phaseToCopy.filters
+    delete phaseToCopy.sorts
     // if DATA_SOURCE, replace with templateDataSource
     const phaseResult = await createObject("Phase", {
       ...phaseToCopy

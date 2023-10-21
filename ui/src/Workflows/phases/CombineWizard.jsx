@@ -13,6 +13,7 @@ import {
   Input,
   Code,
   getToken,
+  FormLabel,
 
 } from "@chakra-ui/react";
 import { isEmpty } from "lodash";
@@ -22,16 +23,17 @@ import IntermediatesPreview from "../../components/IntermediatesPreview";
 import { useQuery } from "@apollo/client";
 import axios from "axios";
 import { getTokenCount, isValidLength } from "../../utils/tokenHelpers";
-import { createObject, createRelationship } from "../../utils/weaviateServices";
+import { createObject, createRelationship, updatePhase } from "../../utils/weaviateServices";
 import { GrConsole } from "react-icons/gr";
 
 
 const CombineWizard = ({
+    phase,
     phaseID,
     prevPhaseID
 }) => {
     
-    const [joinchar, setjoinchar] = React.useState('\n\n')
+    const [joinchar, setjoinchar] = React.useState(phase.prompt || '')
     const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
         variables: {
             id: prevPhaseID,
@@ -111,16 +113,22 @@ const CombineWizard = ({
   return (
     <Box w="600px" h="800px" overflowY="scroll" overflowX="hidden">
 
-        <Heading>Combine Texts</Heading>
+        <FormLabel fontSize="xs">Join Character</FormLabel>
         <Input mb="20px" placeholder="Join Character"  value={joinchar} onChange={(e) => setjoinchar(e.target.value)} />
+        <Box h="600px" overflowY='scroll'>
         <Code p="8px">{joinedText}</Code>
-        <Box h="370px" overflowY={"scroll"}>
-            {data && data.Get.Phase[0].intermediates && (<IntermediatesPreview intermediates={intermediates} />)}
         </Box>
+        {/* <Box h="370px" overflowY={"scroll"}>
+            {data && data.Get.Phase[0].intermediates && (<IntermediatesPreview intermediates={intermediates} />)}
+        </Box> */}
         <Flex justify="flex-end">
           <Button
-            onClick={() => {
+            onClick={async () => {
             // TODO: ALWAYS UPLOAD TO S3, SET INPUTTEXT ON NEXT PAGE TO S3 URL
+            updatePhase(phaseID, {
+                type: phase.type,
+                prompt: joinchar
+            })
             updateAndBack()
             }}
             colorScheme="teal"

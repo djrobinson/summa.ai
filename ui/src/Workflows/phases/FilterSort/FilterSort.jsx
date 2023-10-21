@@ -1,6 +1,6 @@
 import React from "react";
 import { buildSimpleGraphQLQuery } from "../../../utils/graphqlBuilder";
-import { batchCreate, createObject, createOneToMany, createRelationship } from "../../../utils/weaviateServices";
+import { batchCreate, createObject, createOneToMany, createRelationship, updatePhase } from "../../../utils/weaviateServices";
 
 import {
   Text,
@@ -10,6 +10,7 @@ import {
   Flex,
   Code,
   IconButton,
+  FormLabel,
 } from "@chakra-ui/react";
 
 import { isEmpty } from "lodash";
@@ -19,10 +20,18 @@ import FilterOptions from "./FilterSortOptions";
 import { AddIcon } from "@chakra-ui/icons";
 import { apiKeyState } from "../../../recoil/atoms";
 import { useRecoilValue } from "recoil";
+import SearchOption from "./options/SearchOption";
+import LimitOption from "./options/LimitOption";
+import FilterOption from "./options/FilterOption";
+import SortOptions from "./options/SortOption";
+import SortOption from "./options/SortOption";
 
-const generateContext = async (phase, data, finalContexts, finalString, filters, searches, combine = false) => {
+const generateContext = async (phase, prevPhaseID, data, finalContexts, finalString, filters, searches, limit, combine = false) => {
   console.log("FILTERS: ", filters, searches)
-  const filteredFilters = filters.Intermediate.filter(f => f.valueText !== phase._additional.id)
+  const updatedPhase = { type: phase.type, limit: Number.parseInt(limit) }
+  console.log("updatedPhase ", updatedPhase)
+  await updatePhase(phase._additional.id, updatedPhase)
+  const filteredFilters = filters.Intermediate.filter(f => f.valueText !== prevPhaseID)
   if (!isEmpty(searches)) {
     const filter = await createObject('Search', {
       objectPath: searches.nearText.path,
@@ -35,7 +44,7 @@ const generateContext = async (phase, data, finalContexts, finalString, filters,
       "phase",
       "Phase",
       phase._additional.id,
-      "search"
+      "searches"
     );
   }
 
@@ -130,7 +139,7 @@ const FilterSort = ({
   const defaultSearches = defaultSearchesRaw.map(dsr => ({
     nearText: {
       path: dsr.objectPath,
-      concept: dsr.concept
+      concept: dsr.value
     }
   }))
   const defaultSearch = defaultSearches.length ? defaultSearches[0] : {}
@@ -145,17 +154,12 @@ const FilterSort = ({
     order: dsr.order
   }))
   const defaultLimit = phase.limit
-  const allDefaults = [...defaultFilters, ...defaultSearches, ...defaultSorts]
+  const allDefaults = [...defaultFilters]
   console.log('ALL DEFAULTS ', allDefaults)
   const apiKey = useRecoilValue(apiKeyState)
   const [fieldFilterIndex, setFieldFilterIndex] = React.useState(allDefaults.length + !isEmpty(defaultLimit) * 1);
   const [filters, setFilters] = React.useState({
     Intermediate: [
-      {
-        path: ["phase", "Phase", "id"]  ,
-        operator: 'Equal',
-        valueText: prevPhaseID,
-      },
       ...defaultFilters
     ],
   });
@@ -163,11 +167,23 @@ const FilterSort = ({
   const [searches, setSearches] = React.useState(defaultSearch);
   const [sorts, setSorts] = React.useState([]);
   const [limit, setLimit] = React.useState(defaultLimit);
+  const [showLimit, setShowLimit] = React.useState(defaultLimit > 0);
   console.log('FILTERS: ', filters, searches)
+  
+  const filtersWithPrev = {
+    Intermediate: [
+      {
+        path: ["phase", "Phase", "id"]  ,
+        operator: 'Equal',
+        valueText: prevPhaseID,
+      },
+      ...filters.Intermediate
+    ]
+  }
 
   const realQueryString = buildSimpleGraphQLQuery(
     fields,
-    filters,
+    filtersWithPrev,
     searches,
     sorts,
     limit
@@ -202,25 +218,33 @@ const FilterSort = ({
   
   return (
     <Box w="600px">
-      <Box h="200px">
-      
-        {[...Array(fieldFilterIndex)].map((item, i) => (
-          <FilterOptions
-            filterIndex={i}
-            type={"Intermediate"}
-            fields={["text"]}
-            filters={filters}
-            setFilters={setFilters}
-            sorts={sorts}
-            setSorts={setSorts}
-            searches={searches}
-            setSearches={setSearches}
-            limit={limit}
-            setLimit={setLimit}
-
-          />
-        ))}
-        <Flex pt="10px">
+      <Box h="320px">
+        <FormLabel mt="5px" fontSize="xs" fontWeight="800">Searches</FormLabel>
+        {
+         !isEmpty(searches) ? <SearchOption fields={["text"]} searches={searches} setSearches={setSearches} /> : null
+        }
+        <Flex pt="10px" align="center">
+          <IconButton
+            ml="20px"
+            size="xs"
+            onClick={() => {
+              setSearches({
+                nearText: {
+                  path: null,
+                  concept: null
+                }
+              })
+            }}
+            icon={<AddIcon />}
+          ></IconButton>
+          <Text pl="10px" fontSize="xs">Add Search</Text>
+        </Flex>
+        
+        <FormLabel mt="5px" fontSize="xs" fontWeight="800">Filters</FormLabel>
+        {
+         !isEmpty(filters.Intermediate) ? filters.Intermediate.map((f, i) => <FilterOption filterIndex={i} fields={["text"]} filters={filters} setFilters={setFilters} />) : null
+        }
+        <Flex pt="10px" align="center">
           <IconButton
             ml="20px"
             size="xs"
@@ -229,17 +253,51 @@ const FilterSort = ({
             }}
             icon={<AddIcon />}
           ></IconButton>
-          <Text pl="10px">Add Filter</Text>
+          <Text pl="10px" fontSize="xs">Add Filter</Text>
         </Flex>
+        <FormLabel mt="5px" fontSize="xs" fontWeight="800">Sorts</FormLabel>
+        {
+         !isEmpty(sorts) ? <SortOption fields={["text"]} sorts={sorts} setSorts={setSorts} /> : null
+        }
+        <Flex pt="10px" align="center">
+          <IconButton
+            ml="20px"
+            size="xs"
+            onClick={() => {
+              setFieldFilterIndex(fieldFilterIndex + 1);
+            }}
+            icon={<AddIcon />}
+          ></IconButton>
+          <Text pl="10px" fontSize="xs">Add Sort</Text>
+        </Flex>
+        <FormLabel mt="5px" fontSize="xs" fontWeight="800">Limit</FormLabel>
+        {
+          showLimit ? <LimitOption limit={limit} setLimit={setLimit} /> : null
+        }
+        {
+          !showLimit ? <Flex pt="10px"  pb="10px" align="center">
+          <IconButton
+            ml="20px"
+            size="xs"
+            onClick={() => {
+              setShowLimit(true)
+              setLimit(10)
+            }}
+            icon={<AddIcon />}
+          ></IconButton>
+          <Text pl="10px" fontSize="xs">Add Limit</Text>
+        </Flex> : null
+        }
+
       </Box>
-      <Box h="500px" overflowY={"scroll"}>
+      <Box h="380px" overflowY={"scroll"}>
         <IntermediatesPreview intermediates={intermediates} />
       </Box>
 
       <Flex mt="10px">
         <Button
           onClick={async () => {
-            await generateContext(phase, data, finalContexts, finalString, filters, searches, limit, false);
+            await generateContext(phase, prevPhaseID, data, finalContexts, finalString, filters, searches, limit, false);
           }}
           colorScheme="teal"
           rounded="full"

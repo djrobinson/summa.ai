@@ -180,7 +180,7 @@ const Home = () => {
               </Box>
             </Stack>
           </Flex>
-          <Flex  gridGap={12} >
+          <Flex  gridGap={12} mt="20px" >
             <Stack>
               <Tag p="13px" colorScheme='orange' borderRadius='full' fontSize="20px" fontWeight={'bold'}>
                 <TagLabel pl="10px">Step 3 - Create a Workflow</TagLabel>

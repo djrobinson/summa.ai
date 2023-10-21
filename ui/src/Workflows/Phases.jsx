@@ -21,7 +21,7 @@ import {
   Stack,
 } from "@chakra-ui/react";
 import { useLazyQuery, gql, useQuery } from "@apollo/client";
-import { isEmpty } from "lodash";
+import { isEmpty, sortBy } from "lodash";
 import StaticDataSource from "./phases/StaticDataSource";
 import Checkmark from "../components/Checkmark";
 import FilterSort from "./phases/FilterSort/FilterSort";
@@ -65,6 +65,8 @@ const Phases = ({ phases, workflowID }) => {
           id
         }
         type
+        prompt
+        order
         filters {
           ... on Filter {
             operator
@@ -72,14 +74,9 @@ const Phases = ({ phases, workflowID }) => {
             value
           }
         }
-        search {
+        searches {
           ... on Search {
             objectPath
-            value
-          }
-        }
-        limit {
-          ... on Limit {
             value
           }
         }
@@ -89,6 +86,7 @@ const Phases = ({ phases, workflowID }) => {
             order
           }
         }
+        limit
       }
     }
   }
@@ -99,7 +97,8 @@ const Phases = ({ phases, workflowID }) => {
   console.log("Workflow: ", data, error, loading);
   React.useEffect(() => {
     if (!isEmpty(data)) {
-      setInMemoryPhases(data.Get.Phase);
+      const sortedPhases = sortBy(data.Get.Phase, 'order')
+      setInMemoryPhases(sortedPhases);
     }
   }, [data]);
 
@@ -176,6 +175,7 @@ const Phases = ({ phases, workflowID }) => {
               p={6}
             >
               <MultiPromptWizard
+                phase={phase}
                 phaseID={phase._additional.id}
                 prevPhaseID={prevPhaseID}
               />
@@ -195,6 +195,7 @@ const Phases = ({ phases, workflowID }) => {
               p={6}
             >
               <CombineWizard
+                phase={phase}
                 phaseID={phase._additional.id}
                 prevPhaseID={prevPhaseID}
               />
@@ -233,6 +234,7 @@ const Phases = ({ phases, workflowID }) => {
               p={6}
             >
               <ReportWizard
+                phase={phase}
                 phaseID={phase._additional.id}
                 prevPhaseID={prevPhaseID}
                 workflowID={workflowID}
@@ -286,6 +288,7 @@ const Phases = ({ phases, workflowID }) => {
               onClick={() => {
                 addPhase({
                   type: "FILTER_SORT",
+                  order: inMemoryPhases.length + 1
                 });
               }}
             >

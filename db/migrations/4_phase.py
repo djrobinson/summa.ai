@@ -51,6 +51,10 @@ object = {
             "name": "limit",
         },
         {
+            "dataType": ["text"],
+            "name": "prompt"
+        },
+        {
             "dataType": ["Workflow"],
             "name": "workflow",
         },
@@ -67,7 +71,5 @@ add_prop = {"dataType": ["Phase"], "name": "phase"}
 client.schema.property.create("Filter", add_prop)
 add_prop = {"dataType": ["Phase"], "name": "phase"}
 client.schema.property.create("Search", add_prop)
-add_prop = {"dataType": ["Phase"], "name": "phase"}
-client.schema.property.create("Limit", add_prop)
 add_prop = {"dataType": ["Phase"], "name": "phase"}
 client.schema.property.create("Sort", add_prop)
