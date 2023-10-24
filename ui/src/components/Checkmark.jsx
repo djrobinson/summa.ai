@@ -23,8 +23,8 @@ function Checkmark({}) {
 
       <motion.svg
         xmlns="http://www.w3.org/2000/svg"
-        width="100"
-        height="100"
+        width="40"
+        height="40"
         viewBox="0 0 258 258"
       >
         {/* Check mark  */}

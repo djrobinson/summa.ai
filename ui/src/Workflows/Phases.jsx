@@ -19,6 +19,7 @@ import {
   Select,
   Icon,
   Stack,
+  Code,
 } from "@chakra-ui/react";
 import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty, sortBy } from "lodash";
@@ -30,6 +31,7 @@ import { createPhase } from "../utils/weaviateServices";
 import CombineWizard from "./phases/CombineWizard";
 import SplitWizard from "./phases/SplitWizard";
 import ReportWizard from "./phases/ReportWizard";
+import Flow from "../components/Flow";
 
 // PHASE RULES
 // The phases have 2 common properties
@@ -67,6 +69,13 @@ const Phases = ({ phases, workflowID }) => {
         type
         prompt
         order
+        intermediates {
+          ... on Intermediate {
+            _additional {
+              id
+            }
+          }
+        }
         filters {
           ... on Filter {
             operator
@@ -102,249 +111,39 @@ const Phases = ({ phases, workflowID }) => {
     }
   }, [data]);
 
+  const nodes = inMemoryPhases.map((p, i) => {
+    return ({
+      id: p._additional.id,
+      type: 'Node',
+      position: {
+        x: i * 180 + 50,
+        y: 250
+      },
+      data: {
+        label: p.type,
+        runState: p.intermediates && p.intermediates.length ? 'RUNNABLE' : 'NOT RUNNABLE'
+      }
+    })
+  })
+  
+  nodes.push({
+    id: 'choose',
+    type: 'Options',
+    position: {
+      x: inMemoryPhases.length * 180 + 50,
+      y: 200
+    },
+    data: {
+      label: 'CHOOSE',
+      addPhase
+    }
+  })
 
 
   return (
-    <Flex overflowX="scroll">
-      {inMemoryPhases.map((phase, i) => {
-        const prevPhaseID = inMemoryPhases[i - 1] ? inMemoryPhases[i - 1]._additional.id : null
-        const elements = [];
-        if (phase.type === "DATA_SOURCE") {
-          elements.push(
-            <Box>
-              <Box
-                m="10px"
-                w={"700px"}
-                height={"800px"}
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                bg={useColorModeValue("white", "gray.900")}
-                boxShadow={"2xl"}
-                rounded={"md"}
-                p={6}
-              >
-                <StaticDataSource
-                  phaseID={phase._additional.id}
-                />
-              </Box>
-              <Box>
-                <Flex p="20px" justify={"center"}>
-                  <Icon
-                    color="black"
-                    as={GrAddCircle}
-                    h="26px"
-                    w="26px"
-                    mr="10px"
-                  />
-                  <Text color="black" fontWeight="600" fontSize="18px">
-                    Add Another Data Source
-                  </Text>
-                </Flex>
-              </Box>
-            </Box>
-          );
-        }
-        if (phase.type === "FILTER_SORT") {
-          elements.push(
-            <Box
-              m="10px"
-              w={"700px"}
-              height={"800px"}
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              bg={useColorModeValue("white", "gray.900")}
-              boxShadow={"2xl"}
-              rounded={"md"}
-              p={6}
-            >
-              <FilterSort
-                phase={phase}
-                prevPhaseID={prevPhaseID}
-              />
-            </Box>
-          );
-        }
-        if (phase.type === "LLM_PROMPT") {
-          elements.push(
-            <Box
-              m="10px"
-              w={"700px"}
-              height={"800px"}
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              bg={useColorModeValue("white", "gray.900")}
-              boxShadow={"2xl"}
-              rounded={"md"}
-              p={6}
-            >
-              <MultiPromptWizard
-                phase={phase}
-                phaseID={phase._additional.id}
-                prevPhaseID={prevPhaseID}
-              />
-            </Box>
-          );
-        }
-        if (phase.type === "COMBINE") {
-          elements.push(
-            <Box
-              m="10px"
-              w={"700px"}
-              height={"800px"}
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              bg={useColorModeValue("white", "gray.900")}
-              boxShadow={"2xl"}
-              rounded={"md"}
-              p={6}
-            >
-              <CombineWizard
-                phase={phase}
-                phaseID={phase._additional.id}
-                prevPhaseID={prevPhaseID}
-              />
-            </Box>
-          );
-        }
-        if (phase.type === "SPLIT") {
-          elements.push(
-            <Box
-              m="10px"
-              w={"700px"}
-              height={"800px"}
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              bg={useColorModeValue("white", "gray.900")}
-              boxShadow={"2xl"}
-              rounded={"md"}
-              p={6}
-            >
-              <SplitWizard
-                phaseID={phase._additional.id}
-                prevPhaseID={prevPhaseID}
-              />
-            </Box>
-          );
-        }
-        if (phase.type === "REPORT") {
-          elements.push(
-            <Box
-              m="10px"
-              w={"700px"}
-              height={"800px"}
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              bg={useColorModeValue("white", "gray.900")}
-              boxShadow={"2xl"}
-              rounded={"md"}
-              p={6}
-            >
-              <ReportWizard
-                phase={phase}
-                phaseID={phase._additional.id}
-                prevPhaseID={prevPhaseID}
-                workflowID={workflowID}
-              />
-            </Box>
-          );
-        }
-        elements.push(
-          <Flex w="120px" h="800px" align="center" justify="center">
-            <Stack>
-              <Icon as={BsArrowRight} h="40px" w="120px" />
-            </Stack>
-          </Flex>
-        );
-        return elements;
-      })}
-
-      <Flex h={"700px"} w="400px" align={"center"}>
-        <Box
-          m="10px"
-          w={"300px"}
-          height={"300px"}
-          rounded={"md"}
-          p={6}
-          align="center"
-        >
-          <Checkmark />
-          <Text pt="10px">What's next:</Text>
-          <Flex>
-            <Button
-              mt={"20px"}
-              colorScheme="teal"
-              rounded={"full"}
-              flex={"1 0 auto"}
-              onClick={() => {
-                addPhase({
-                  type: "LLM_PROMPT",
-                  order: inMemoryPhases.length + 1
-                });
-              }}
-            >
-              Create LLM Prompt
-            </Button>
-          </Flex>
-          <Flex>
-            <Button
-              mt={"20px"}
-              colorScheme="teal"
-              rounded={"full"}
-              flex={"1 0 auto"}
-              onClick={() => {
-                addPhase({
-                  type: "FILTER_SORT",
-                  order: inMemoryPhases.length + 1
-                });
-              }}
-            >
-              Filter, Sort, or Restructure Text
-            </Button>
-          </Flex>
-          <Flex>
-            <Button
-              mt={"20px"}
-              colorScheme="teal"
-              rounded={"full"}
-              flex={"1 0 auto"}
-              onClick={() => {
-                addPhase({
-                  type: "SPLIT",
-                  order: inMemoryPhases.length + 1
-                });
-              }}
-            >
-              Split Text
-            </Button>
-          </Flex>
-          <Flex>
-            <Button
-              mt={"20px"}
-              colorScheme="teal"
-              rounded={"full"}
-              flex={"1 0 auto"}
-              onClick={() => {
-                addPhase({
-                  type: "COMBINE",
-                  order: inMemoryPhases.length + 1
-                });
-              }}
-            >
-              Combine Text
-            </Button>
-          </Flex>
-          <Flex>
-            <Button
-              mt={"20px"}
-              colorScheme="teal"
-              rounded={"full"}
-              flex={"1 0 auto"}
-              onClick={() => {
-                addPhase({
-                  type: "REPORT",
-                  order: inMemoryPhases.length + 1
-                });
-              }}
-            >
-              Create Report
-            </Button>
-          </Flex>
-        </Box>
-      </Flex>
+    <Flex>
+      <Button pos="absolute" top="40px" left="40px" colorScheme="teal" size="xs" rounded="full">+ New Data Source</Button>
+      <Flow nodes={nodes} edges={[]} />
     </Flex>
   );
 };

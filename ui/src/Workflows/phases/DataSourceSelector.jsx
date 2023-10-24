@@ -58,7 +58,7 @@ export const FETCH_DATA_SOURCE = gql`
   }
 `;
 
-const createPhaseVersion = async (workflowID, dataSource, intermediates) => {
+export const createDataSourcePhase = async (workflowID, dataSource, intermediates = []) => {
   const phase = await createObject("Phase", {
     type: "DATA_SOURCE",
     selection: dataSource,
@@ -83,7 +83,7 @@ const createPhaseVersion = async (workflowID, dataSource, intermediates) => {
     phase.id,
     "workflow"
   );
-  return true;
+  return phase;
 };
 
 const DataSourceSelector = ({ id, refreshParent }) => {
@@ -101,7 +101,7 @@ const DataSourceSelector = ({ id, refreshParent }) => {
   }, [dataSource, fetchDataSources]);
   const dataSources = !isEmpty(data) ? data.Get.DataSource : [];
   const intermediates =
-    !isEmpty(dsData) && !isEmpty(dsData.Get.DataSource)
+    !isEmpty(dsData) && !isEmpty(dsData.Get.DataSource) && !isEmpty(dsData.Get.DataSource[0].intermediates)
       ? dsData.Get.DataSource[0].intermediates
       : [];
   return (
@@ -150,7 +150,7 @@ const DataSourceSelector = ({ id, refreshParent }) => {
           isDisabled={isCreating}
           onClick={async () => {
             setIsCreating(true)
-            await createPhaseVersion(id, dataSource, intermediates);
+            await createDataSourcePhase(id, dataSource, intermediates);
             console.log("Refreshing parent")
             refreshParent()
           }}

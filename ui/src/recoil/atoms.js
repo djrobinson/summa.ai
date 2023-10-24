@@ -62,7 +62,7 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
     }
     // TODO: ALL OF THIS MOVES TO LAMBDA
     const objRes = await createObject("Report", {
-      title: 'Report 10',
+      title: prompt.reportTitle,
       text: res.sentences.join('\n\n'),
     });
     console.log('CREATED REPORT: ', workflowID, phaseID, objRes)
@@ -216,7 +216,7 @@ export const requestState = atomFamily({
       if (!request) {
         return {};
       }
-      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, workflowID: request.workflowID, sourceContextID: request.id, type: request.type, result: null, start: null, end: null };
+      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, workflowID: request.workflowID, sourceContextID: request.id, type: request.type, result: null, start: null, end: null, reportTitle: null };
     },
   }),
   effects: (requestId) => [

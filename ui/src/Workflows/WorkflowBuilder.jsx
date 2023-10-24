@@ -22,7 +22,7 @@ import {
 import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { Link, useNavigate } from "react-router-dom";
-import { FETCH_DATA_SOURCE, FETCH_DATA_SOURCES } from "./phases/DataSourceSelector";
+import { FETCH_DATA_SOURCE, FETCH_DATA_SOURCES, createDataSourcePhase } from "./phases/DataSourceSelector";
 
 const FETCH_WORKFLOWS = gql`
   {
@@ -129,20 +129,50 @@ const WorkflowTile = ({
   return <Heading>Workflow Tile</Heading>;
 };
 
-const copyWorkflow = async (newWorkflowTitle, workflowToCopy, templateDataSource) => {
+const copyWorkflow = async (newWorkflowTitle, workflowToCopy, templateDataSource, intermediates) => {
+  console.log("INPUTS TO COPY WORKFLOW: ", newWorkflowTitle, workflowToCopy, templateDataSource, intermediates)
   const wf = await createObject("Workflow", {
     name: newWorkflowTitle,
   });
   console.log('CREATE WORKFLOW: ', wf)
   await workflowToCopy.forEach(async (phaseToCopy) => {
-    delete phaseToCopy._additional
-    delete phaseToCopy.searches
-    delete phaseToCopy.filters
-    delete phaseToCopy.sorts
+    const cleanedPhased = { ...phaseToCopy }
+    delete cleanedPhased._additional
+    delete cleanedPhased.searches
+    delete cleanedPhased.filters
+    delete cleanedPhased.sorts
     // if DATA_SOURCE, replace with templateDataSource
-    const phaseResult = await createObject("Phase", {
-      ...phaseToCopy
-    })
+    let phaseResult;
+    if (cleanedPhased.type === 'DATA_SOURCE') {
+      phaseResult = await createDataSourcePhase(wf.id, templateDataSource, intermediates)
+
+    } else {
+      phaseResult = await createObject("Phase", {
+        ...cleanedPhased
+      })
+    }
+    // CREATE SEARCHES
+    if (!isEmpty(phaseToCopy.searches)) {
+      phaseToCopy.searches.forEach(async (s) => {
+        console.log("CREATING SEARCH: ", s)
+        const filter = await createObject('Search', {
+          objectPath: s.objectPath,
+          value: s.value
+        })
+        await createRelationship(
+          "Search",
+          filter.id,
+          "phase",
+          "Phase",
+          phaseResult.id,
+          "searches"
+        );
+      })
+    }
+    // TECH DEBT! JUST GET DEMO WORKING. THESE NEED TO BE DONE TOO.
+    // CREATE FILTERS
+
+    // CREATE SORTS
     console.log('PHASE RESULT: ', phaseResult)
     await createRelationship(
       "Workflow",
@@ -163,6 +193,7 @@ const WorkflowBuilder = () => {
   const [schema, setSchema] = React.useState(null);
   const [types, setTypes] = React.useState({});
   const [workflowToCopy, setWorkflowToCopy] = React.useState([])
+  const [copyDataSource, setCopyDataSource] = React.useState([])
   const [newWorkflowTitle, setNewWorkflowTitle] = React.useState("");
   const [copiedWorkflowTitle, setCopiedWorkflowTitle] = React.useState("");
   const [fetchWorkflows, { data, error, loading }] =
@@ -171,6 +202,17 @@ const WorkflowBuilder = () => {
   useLazyQuery(FETCH_WORKFLOW, {
     variables: { id: workflowToCopy },
   });
+  const [
+    fetchDataSource,
+    { data: dsData, error: dsError, loading: dsLoading },
+  ] = useLazyQuery(FETCH_DATA_SOURCE, {
+    variables: { id: copyDataSource },
+  });
+  const intermediates =
+    !isEmpty(dsData) && !isEmpty(dsData.Get.DataSource) && !isEmpty(dsData.Get.DataSource[0].intermediates)
+      ? dsData.Get.DataSource[0].intermediates
+      : [];
+  console.log('DS INTERMEDIATES: ', intermediates)
   const { data: dataSourceData, error: dataSourceError, loading: dataSourceLoading } = useQuery(FETCH_DATA_SOURCES)
   console.log("workflows: ", data, error, loading);
   console.log("dataSourceData: ", dataSourceData);
@@ -182,6 +224,9 @@ const WorkflowBuilder = () => {
   React.useEffect(() => {
     fetchCopyWorkflow()
   }, [workflowToCopy, fetchCopyWorkflow])
+  React.useEffect(() => {
+    fetchDataSource()
+  }, [copyDataSource, fetchDataSource])
   React.useEffect(() => {
     fetchWorkflows();
   }, [fetchWorkflows]);
@@ -269,8 +314,9 @@ const WorkflowBuilder = () => {
           <Select
             placeholder="Template..."
             onChange={(e) => {
-
+              setCopyDataSource(e.target.value)
             }}
+            value={copyDataSource}
 
           >
             {dataSources.map((k) => (
@@ -288,10 +334,11 @@ const WorkflowBuilder = () => {
             <Button
               ml="10px"
               onClick={async () => {
-                const wf = await copyWorkflow(copiedWorkflowTitle, copiedWorkflow, null)
+                const wf = await copyWorkflow(copiedWorkflowTitle, copiedWorkflow, copyDataSource, intermediates)
                 console.log("NEW WF: ", `/workflows/${wf}`);
-
-                navigate(`/workflows/${wf}`);
+                setTimeout(() => {
+                  navigate(`/workflows/${wf}`)
+                }, 2000);
               }}
               colorScheme="teal"
               alignSelf="end"

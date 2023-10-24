@@ -31,6 +31,18 @@ object = {
             "name": "weaviate_url",
         },
         {
+            "dataType": ["int"],
+            "name": "workflow_step"  
+        },
+        {
+            "dataType": ["int"],
+            "name": "step_order"
+        },
+        {
+            "dataType": ["text"],
+            "name": "source_id"  
+        },
+        {
             "dataType": ["Intermediate"],
             "name": "intermediates",
         },

@@ -27,6 +27,7 @@ const StaticDataSource = ({ phaseID }) => {
       id: phaseID,
     },
   });
+  console.log("StaticDataSource ", data)
   const intermediates = !isEmpty(data) ? data.Get.Phase[0].intermediates : [];
   return (
     <Box>

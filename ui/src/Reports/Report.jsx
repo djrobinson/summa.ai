@@ -281,7 +281,7 @@ const Report = () => {
   const sentences = report.text ? report.text.split("\n\n") : []
   const intermediates = relatedData?.Get?.Intermediate || []
   const reordereds = sentenceResponse.result ? JSON.parse(sentenceResponse.result) : []
-  console.log("REORDEDS? ", reordereds)
+  console.log("REORDEDS? ", reordereds, annotate)
     return (
       <>
     <Box>
@@ -300,14 +300,25 @@ const Report = () => {
           <Heading>Report</Heading>
           {edit ? <Button m="20px" onClick={() => setEdit(false)}>Cancel Annotation</Button> : <Button m="20px" onClick={() => setEdit(true)}>Create New Annotation</Button>}
           
-          {edit ? <TokenAnnotator tokens={sentences.join('\n').split(' ')} value={annotate} onChange={(v) => {
+          {edit ? <TokenAnnotator tokens={sentences.join(' ').split(' ')} value={annotate} onChange={(v) => {
             console.log("WHAT V IS: ", v)
             const last = v[v.length - 1]
-            setAnnotate([last])
-            const newSent = sentences.join('\n').split(' ').slice(last.start, last.end).join(' ')
-            console.log("WHAT newSent IS: ", newSent)
-            setAnalyzeSentence(newSent)
-            fetchRelated()
+            if (last) {
+
+              const splitNewSent = sentences.join(' ').split(' ').slice(last.start, last.end)
+              console.log('splitNewSent ', splitNewSent)
+              const newSent = [...splitNewSent].join(' ')
+              const secondToLast = !isEmpty(splitNewSent) ? splitNewSent[splitNewSent.length - 1] : ''
+              console.log('secondToLast ', secondToLast)
+              if (secondToLast.includes('. ')) {
+                setAnnotate([{ ...last, end: last.end - 1 }])
+              } else {
+                setAnnotate([last])
+              }
+              console.log("WHAT newSent IS: ", newSent)
+              setAnalyzeSentence(newSent)
+              fetchRelated()
+            }
           }} /> : <HighlightText text={text} highlightTexts={reportHighlights} />}
         </Box>
         {!isEmpty(analyzeSentence) && <Box

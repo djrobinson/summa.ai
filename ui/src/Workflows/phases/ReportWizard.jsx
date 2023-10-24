@@ -27,11 +27,14 @@ import { GET_INTERMEDIATES } from "./MultiPromptWizard";
 import { isEmpty } from "lodash";
 import { useQuery } from "@apollo/client";
 import { updatePhase } from "../../utils/weaviateServices";
+import { useNavigate } from "react-router-dom";
 
 const ReportWizard = ({ phase, workflowID, phaseID, prevPhaseID }) => {
+    const navigate = useNavigate();
     const [summarizingPrompt, setSummarizingPrompt] = React.useState(phase.prompt || '');
     const [showManager, setShowManager] = React.useState(false);
     const [reportType, setReportType] = React.useState('ARTICLE')
+    const [reportTitle, setReportTitle] = React.useState('')
     const [requests, setRequests] = useRecoilState(requestsState);
     const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
         variables: {
@@ -82,6 +85,8 @@ const ReportWizard = ({ phase, workflowID, phaseID, prevPhaseID }) => {
             </Card>
         </SimpleGrid>
         </>)}
+        <Text>Report Title:</Text>
+        <Input onChange={(e) => setReportTitle(e.target.value)} value={reportTitle} />
         <Text mt="20px">Article Generation Prompt:</Text>
         <Textarea
             mt="20px"
@@ -110,11 +115,13 @@ const ReportWizard = ({ phase, workflowID, phaseID, prevPhaseID }) => {
                 type: 'REPORT',
                 prompt: summarizingPrompt,
                 context: context,
+                reportTitle,
                 phaseID,
                 workflowID
 
             }])
             setShowManager(true)
+
           }}
         >
           Generate Report
@@ -125,15 +132,7 @@ const ReportWizard = ({ phase, workflowID, phaseID, prevPhaseID }) => {
           rounded={"full"}
           flex={"1 0 auto"}
           onClick={() => {
-            setRequests([...requests, {
-                id: 'REPORT-3',
-                type: 'REPORT',
-                prompt: summarizingPrompt,
-                context: context,
-                phaseID,
-                workflowID
-            }])
-            setShowManager(true)
+            navigate(`/reports/${reportID}`)
           }}
         >
           GO TO REPORT: {reportID}

@@ -7,7 +7,6 @@ const DataSources = () => {
   const [showConfigure, setShowConfigure] = React.useState(false);
   const [dsID, setDsID] = React.useState("");
 
-  if (!showConfigure) {
     return (
       <DataSourcesHome
         dsID={dsID}
@@ -15,14 +14,7 @@ const DataSources = () => {
         setDsID={setDsID}
       />
     );
-  }
-  return (
-    <ConfigureDataSource
-      uuid={dsID}
-      setShowConfigure={setShowConfigure}
-      setDsID={setDsID}
-    />
-  );
+
 };
 
 export default DataSources;

@@ -11,10 +11,11 @@ import {
   Input,
   FormLabel,
 } from "@chakra-ui/react";
-import { useLazyQuery, gql } from "@apollo/client";
+import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { createObject } from "../utils/weaviateServices";
 import ConfigureDataSource from "./ConfigureDataSource";
+import { useNavigate } from "react-router-dom";
 
 const FETCH_DATA_SOURCE = gql`
   {
@@ -29,18 +30,12 @@ const FETCH_DATA_SOURCE = gql`
   }
 `;
 
-const DataSourcesHome = ({ setShowConfigure, setDsID, dsID }) => {
-  const [fetchDataSources, { data, error, loading }] =
-    useLazyQuery(FETCH_DATA_SOURCE);
+const DataSourcesHome = () => {
+  const navigate = useNavigate()
+  const { data, error, loading } = useQuery(FETCH_DATA_SOURCE);
   console.log("Data Sources: ", data, error, loading);
   const [newSourceTitle, setNewSourceTitle] = React.useState("");
   const workflows = !isEmpty(data) ? data.Get.DataSource : [];
-  React.useEffect(() => {
-    if (!dsID) {
-      console.log("SUPPPOSEDLY REFRESHING");
-      fetchDataSources();
-    }
-  }, [fetchDataSources, dsID]);
 
   return (
     <Wrap>
@@ -71,8 +66,7 @@ const DataSourcesHome = ({ setShowConfigure, setDsID, dsID }) => {
                 name: newSourceTitle,
               });
               console.log("NEW DS: ", ds);
-              setDsID(ds.id);
-              setShowConfigure(true);
+              navigate(`/data/${ds.id}`);
             }}
             colorScheme="teal"
             alignSelf="end"
@@ -102,8 +96,7 @@ const DataSourcesHome = ({ setShowConfigure, setDsID, dsID }) => {
             </Button>
             <Button
               onClick={() => {
-                setDsID(w._additional.id);
-                setShowConfigure(true);
+                navigate(`/data/${w._additional.id}`);
               }}
               colorScheme="teal"
               mt="40px"

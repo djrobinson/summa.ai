@@ -33,7 +33,7 @@ const CombineWizard = ({
     prevPhaseID
 }) => {
     
-    const [joinchar, setjoinchar] = React.useState(phase.prompt || '')
+    const [joinchar, setjoinchar] = React.useState(phase.prompt || '\n\n')
     const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
         variables: {
             id: prevPhaseID,

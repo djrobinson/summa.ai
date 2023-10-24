@@ -59,6 +59,7 @@ const RequestsButton = () => {
             const latest = Math.max(...startsOnly)
             const secondsLeft = now - latest
             setWaitTime(60 - secondsLeft)
+            setShowThrottleMessage(true)
         } else {
             setShowThrottleMessage(false)
             setWaitTime(0)
