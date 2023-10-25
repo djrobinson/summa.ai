@@ -43,6 +43,10 @@ object = {
             "name": "source_id"  
         },
         {
+            "dataType": ["text"],
+            "name": "target_id"  
+        },
+        {
             "dataType": ["Intermediate"],
             "name": "intermediates",
         },

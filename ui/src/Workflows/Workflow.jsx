@@ -35,21 +35,28 @@ export const FETCH_WORKFLOW = gql`
 `;
 const Workflow = ({}) => {
   const { id } = useParams();
-  
-  const [fetchWorkflows, { data, error, loading }] = useLazyQuery(FETCH_WORKFLOW, {
-    variables: { id },
-  });
+
+  const [fetchWorkflows, { data, error, loading }] = useLazyQuery(
+    FETCH_WORKFLOW,
+    {
+      variables: { id },
+    }
+  );
   React.useEffect(() => {
-    fetchWorkflows()
-  }, [])
+    fetchWorkflows();
+  }, []);
   console.log("Workflow: ", data, error, loading);
   // If phases, then render them
   // if not, show DataSourceSelector
-  const phases = !isEmpty(data) ? data.Get.Workflow[0].phases : [];
-  if (!isEmpty(phases)) {
-    return <Phases phases={phases} workflowID={id} />;
-  }
-  return <DataSourceSelector id={id} refreshParent={fetchWorkflows} />;
+  const workflow = !isEmpty(data) ? data.Get.Workflow[0] : {};
+  const phases =
+    !isEmpty(data) && !isEmpty(data.Get.Workflow[0].phases)
+      ? data.Get.Workflow[0].phases
+      : [];
+
+  return (
+    <Phases phases={phases} workflowID={id} workflowTitle={workflow.name} />
+  );
 };
 
 export default Workflow;
