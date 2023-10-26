@@ -1,5 +1,7 @@
-import { Box, Button, Flex, Stack, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Icon, IconButton, Text } from "@chakra-ui/react";
 import React, { useCallback } from "react";
+import { FaEdit, FaPlay, FaStop, FaTrash } from "react-icons/fa";
+import { MdOutlineChromeReaderMode } from "react-icons/md";
 import ReactFlow, {
   Background,
   Controls,
@@ -13,6 +15,10 @@ import ReactFlow, {
 
 import "reactflow/dist/style.css";
 import Checkmark from "./Checkmark";
+import DataSourceNode from "./flows/DataSourceNode";
+import FilterNode from "./flows/FilterNode";
+import LLMPrompNode from "./flows/LLMPromptNode";
+import ReportNode from "./flows/ReportNode";
 
 const Options = (props) => {
   const { data } = props;
@@ -103,8 +109,16 @@ const Options = (props) => {
   );
 };
 
+const NODE_TYPES = {
+  LLM_PROMPT: LLMPrompNode,
+  DATA_SOURCE: DataSourceNode,
+  FILTER_SORT: FilterNode,
+  REPORT: ReportNode,
+};
+
 const Node = (n) => {
   const { data } = n;
+  const Component = NODE_TYPES[data.type];
   return (
     <>
       <Box
@@ -116,12 +130,50 @@ const Node = (n) => {
         align="center"
         justify="center"
       >
-        <Text>{data.label}</Text>
-        <Stack>
-          <Button size="xs">Edit</Button>
+        <Component {...data} />
+        <Flex align="center" justify="center">
+          <IconButton
+            onClick={() => {
+              data.setEditPhase(n.id);
+            }}
+            size="sm"
+            bg="white"
+            icon={
+              <Icon zIndex={6} color="yellow.700" as={FaEdit} w={5} h={5} />
+            }
+          />
+          <IconButton
+            size="sm"
+            bg="white"
+            icon={
+              <Icon
+                zIndex={6}
+                color="gray.800"
+                as={MdOutlineChromeReaderMode}
+                w={6}
+                h={6}
+              />
+            }
+          />
+          <IconButton
+            size="sm"
+            bg="white"
+            icon={<Icon zIndex={6} color="teal.400" as={FaPlay} w={5} h={5} />}
+          />
+          <IconButton
+            size="sm"
+            bg="white"
+            p="0"
+            m="0"
+            icon={<Icon zIndex={6} color="maroon" as={FaStop} w={5} h={5} />}
+          />
 
-          <Button size="xs">Delete</Button>
-        </Stack>
+          <IconButton
+            size="sm"
+            bg="white"
+            icon={<Icon zIndex={6} color="red.600" as={FaTrash} w={5} h={5} />}
+          />
+        </Flex>
 
         <Handle
           type="target"
@@ -143,17 +195,17 @@ const Node = (n) => {
         <Button
           onClick={() => {
             const workflowStep = data.workflow_step + 1;
-            const stepOrder = data.step_order + 1;
+            const stepOrder = data.step_order + 1.5;
             // TODO: CALCULATE Y BASED ON # OF PHASE ITEMS
             data.createOptions((prev) => [
               ...prev,
               {
                 id: `choose${n.id}`,
                 type: "Options",
-                position: {
-                  x: workflowStep * 275,
-                  y: stepOrder * 150,
-                },
+                // position: {
+                //   x: workflowStep * 275,
+                //   y: stepOrder * 150,
+                // },
                 data: {
                   label: "CHOOSE",
                   workflow_step: workflowStep,

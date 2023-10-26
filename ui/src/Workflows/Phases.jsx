@@ -13,11 +13,12 @@ import {
   ModalOverlay,
   Stack,
 } from "@chakra-ui/react";
-import { isEmpty, sortBy } from "lodash";
+import { isEmpty, orderBy, sortBy } from "lodash";
 import { FaPlay, FaRegSave, FaStop } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";
 import Flow from "../components/Flow";
 import { createPhase } from "../utils/weaviateServices";
+import PhaseRouter from "./PhaseRouter";
 import DataSourceSelector from "./phases/DataSourceSelector";
 
 // PHASE RULES
@@ -35,6 +36,13 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
   const [inMemoryPhases, setInMemoryPhases] = React.useState([]);
   const [tempOptionPhases, setTempOptionPhases] = React.useState([]);
   const [showDataSource, setShowDataSource] = React.useState(false);
+  const [editPhase, setEditPhase] = React.useState(null);
+  let fullEditPhase = {};
+  if (!isEmpty(editPhase)) {
+    fullEditPhase = inMemoryPhases.filter(
+      (imp) => imp._additional.id === editPhase
+    )[0];
+  }
   const allPs = phases.map(
     (phase) => `{
     path: ["id"],
@@ -48,6 +56,10 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
     const newPhases = [...inMemoryPhases, { ...p }];
     setInMemoryPhases(newPhases);
   };
+  const updatePhase = async (p) => {
+    const updatedPhase = await updatePhase(p.id, p);
+    setInMemoryPhases([]);
+  };
   const FETCH_PHASE_INTERMEDIATES = gql`
   query GetPhaseIntermediates {
     Get {
@@ -57,6 +69,7 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
         }
         type
         prompt
+        selection
         workflow_step
         step_order
         source_id
@@ -121,25 +134,19 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
     }
   });
   const nodes = inMemoryPhases.map((p, i) => {
-    const sourceReferenced = edges.some(
-      (edg) => edg.source === p._additional.id
-    );
     // TODO: CALCULATE Y BASED ON # OF PHASE ITEMS
     return {
       id: p._additional.id,
       type: "Node",
-      position: {
-        x: p.workflow_step * 280 + 50,
-        y: p.step_order * 150,
-      },
+      // position: {
+      //   x: p.workflow_step * 280 + 50,
+      //   y: p.step_order * 150,
+      // },
       data: {
-        label: p.type,
-        workflow_step: p.workflow_step,
-        step_order: p.step_order,
-        source_id: p.source_id,
-        hideBranch: !sourceReferenced,
+        ...p,
         createOptions: setTempOptionPhases,
         addPhase: addPhase,
+        setEditPhase: setEditPhase,
         runState:
           p.intermediates && p.intermediates.length
             ? "RUNNABLE"
@@ -161,14 +168,14 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
       const node = {
         id: `choose${nid}`,
         type: "Options",
-        position: {
-          x: (imp.workflow_step + 1) * 280 + 50,
-          y: imp.step_order * 146,
-        },
+        // position: {
+        //   x: (imp.workflow_step + 1) * 280 + 50,
+        //   y: imp.step_order * 146,
+        // },
         data: {
           label: "CHOOSE",
           workflow_step: imp.workflow_step + 1,
-          step_order: imp.step_order,
+          step_order: imp.step_order + 0.5,
           createOptions: setTempOptionPhases,
           addPhase,
         },
@@ -190,7 +197,7 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
   tempOptionPhases.forEach((top, i) => {
     nodes.push(top);
     edges.push({
-      id: "temp-options-" + i,
+      id: "temp-choose-" + i,
       source: top.id.replace("choose", ""),
       target: top.id,
       animated: true,
@@ -198,7 +205,61 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
     });
   });
 
-  console.log("NODES: ", nodes);
+  // I think much of this can move down to Flow once I figure out inputs
+
+  const nodeCountPerLevel = nodes.reduce((acc, c) => {
+    console.log("i nodeCountPerLevel", c);
+    const newAcc = { ...acc };
+    if (newAcc[c.data.workflow_step]) {
+      newAcc[c.data.workflow_step]++;
+      return newAcc;
+    }
+    newAcc[c.data.workflow_step] = 1;
+    return newAcc;
+  }, {});
+
+  console.log("nodeCountPerLevel", nodeCountPerLevel);
+  const levelCountKeys = Object.keys(nodeCountPerLevel);
+  const stepOrderTracker = !isEmpty(nodeCountPerLevel)
+    ? levelCountKeys.reduce(
+        (acc, c) => ({
+          ...acc,
+          [c]: 1,
+        }),
+        {}
+      )
+    : {};
+  const nodesOrdered = orderBy(nodes, (n) => n.data.step_order);
+  nodesOrdered.forEach((n) => {
+    n.data.step_order = stepOrderTracker[n.data.workflow_step];
+    stepOrderTracker[n.data.workflow_step]++;
+  });
+  const levelCounts = Object.values(nodeCountPerLevel);
+  const maxLevelCount = Math.max(...levelCounts);
+  const BASE_ROW_HEIGHT = 150;
+  const nodesWithPositions = nodesOrdered.map((n) => {
+    const yMultiplier =
+      (maxLevelCount * BASE_ROW_HEIGHT) /
+      nodeCountPerLevel[n.data.workflow_step];
+    const hasChoose = edges.some(
+      (edg) => edg.id.includes("choose") && edg.source === n.id
+    );
+    console.log("SOURCE REERENCED: ", n);
+    return {
+      ...n,
+      data: {
+        ...n.data,
+        hideBranch: hasChoose,
+        stepCount: nodeCountPerLevel[n.data.workflow_step],
+      },
+      position: {
+        x: n.data.workflow_step * 280 + 50,
+        y: n.data.step_order * yMultiplier,
+      },
+    };
+  });
+
+  console.log("NODES: ", nodesWithPositions);
   console.log("EDGES: ", edges);
 
   return (
@@ -242,7 +303,7 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
           >
             Workflow Report
           </Button>
-          <Flow nodes={nodes} edges={edges} />
+          <Flow nodes={nodesWithPositions} edges={edges} />
         </Flex>
       </Stack>
       <Modal
@@ -259,6 +320,25 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
               id={workflowID}
               addPhase={(val) => setInMemoryPhases([...inMemoryPhases, val])}
               dataSourceCount={dataSourceCount}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+      {/* TODO: 2ND, 3RD MODALS WILL SHOW EDIT/READ MODES */}
+      <Modal
+        size="4xl"
+        isOpen={!isEmpty(editPhase)}
+        onClose={() => {
+          setEditPhase(null);
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalBody>
+            <PhaseRouter
+              phase={fullEditPhase}
+              workflowID={workflowID}
+              prevPhaseID={fullEditPhase.source_id}
             />
           </ModalBody>
         </ModalContent>

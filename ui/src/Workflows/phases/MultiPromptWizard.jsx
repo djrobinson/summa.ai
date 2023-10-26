@@ -1,26 +1,11 @@
-import React from "react";
-import md5 from "md5";
-import {
-  Box,
-  Text,
-  Stack,
-  Heading,
-  Button,
-  Flex,
-  Textarea,
-  Wrap,
-  WrapItem,
-  FormLabel,
-  TagLabel,
-} from "@chakra-ui/react";
-import { isValidLength } from "../../utils/tokenHelpers";
 import { gql, useQuery } from "@apollo/client";
-import { createObject, createRelationship, updatePhase } from "../../utils/weaviateServices";
-import IntermediatesPreview from "../../components/IntermediatesPreview";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { requestState, requestsState } from "../../recoil/atoms";
+import { Box, Button, Flex, FormLabel, Text, Textarea } from "@chakra-ui/react";
+import React from "react";
+import { useRecoilState } from "recoil";
 import PromptControls from "../../RequestManager/PromptControls";
-
+import IntermediatesPreview from "../../components/IntermediatesPreview";
+import { requestsState } from "../../recoil/atoms";
+import { updatePhase } from "../../utils/weaviateServices";
 
 export const GET_INTERMEDIATES = gql`
   query GetIntermediates($id: String!) {
@@ -39,11 +24,9 @@ export const GET_INTERMEDIATES = gql`
   }
 `;
 
-
-
 const MultiPromptWizard = ({ phase, phaseID, prevPhaseID }) => {
-  const multiPrompt = phase.prompt
-  console.log("MULTIPROMPT PHASE: ", multiPrompt)
+  const multiPrompt = phase.prompt;
+  console.log("MULTIPROMPT PHASE: ", multiPrompt);
   const [summarizingPrompt, setSummarizingPrompt] = React.useState(multiPrompt);
   const [requests, setRequests] = useRecoilState(requestsState);
   const [showManager, setShowManager] = React.useState(false);
@@ -61,11 +44,11 @@ const MultiPromptWizard = ({ phase, phaseID, prevPhaseID }) => {
       id: phaseID,
     },
   });
-  console.log('currData ', currData)
+  console.log("currData ", currData);
 
   let contexts = [];
   if (data && data.Get.Phase[0].intermediates) {
-    contexts = data.Get.Phase[0].intermediates.map((d,i) => {
+    contexts = data.Get.Phase[0].intermediates.map((d, i) => {
       return {
         // Note: I commented ...d and haven't tested it! It might break something in atoms.js
         // ...d,
@@ -79,42 +62,44 @@ const MultiPromptWizard = ({ phase, phaseID, prevPhaseID }) => {
   console.log("CONTEXTS: ", contexts);
   return (
     <Box w="600px">
-      
-        <>
-          <FormLabel>Summarizing Prompt:</FormLabel>
-          <Textarea
-            value={summarizingPrompt}
-            onChange={(e) => setSummarizingPrompt(e.target.value)}
-          />
-          {currData && currData.Get.Phase[0].intermediates ? (
-            <Box h="530px" mt="10px" overflowY="scroll">
-            <IntermediatesPreview intermediates={currData.Get.Phase[0].intermediates} />
-            </Box>
-          ) : ( <Box h="530px" mt="10px" overflowY="scroll">
+      <>
+        <FormLabel>Summarizing Prompt:</FormLabel>
+        <Textarea
+          value={summarizingPrompt}
+          onChange={(e) => setSummarizingPrompt(e.target.value)}
+        />
+        {currData && currData.Get.Phase[0].intermediates ? (
+          <Box h="530px" mt="10px" overflowY="scroll">
+            <IntermediatesPreview
+              intermediates={currData.Get.Phase[0].intermediates}
+            />
+          </Box>
+        ) : (
+          <Box h="530px" mt="10px" overflowY="scroll">
             {contexts &&
               contexts.slice(0, 100).map((d, i) => {
                 if (showManager) {
+                  return (
+                    <Box mt="20px">
+                      <PromptControls id={d.id} prompt={d.prompt} />
+                    </Box>
+                  );
+                }
 
                 return (
                   <Box mt="20px">
-                    <PromptControls id={d.id} prompt={d.prompt} />
-                  </Box>
-                );
-                }
-                
-                return (
-                  <Box mt="20px">
-                  <Text fontWeight={"800"}>Prompt {i + 1} Preview</Text>
+                    <Text fontWeight={"800"}>Prompt {i + 1} Preview</Text>
                     <Box bg={"gray.800"} p="20px" overflowY="scroll">
                       <Text key={i} color={"lime"}>
                         {d.prompt} {d.context}
                       </Text>
                     </Box>
                   </Box>
-                )
+                );
               })}
-          </Box>)}
-        </>
+          </Box>
+        )}
+      </>
       <Flex>
         <Button
           mt={"20px"}
@@ -122,11 +107,20 @@ const MultiPromptWizard = ({ phase, phaseID, prevPhaseID }) => {
           rounded={"full"}
           flex={"1 0 auto"}
           onClick={async () => {
-            const updatedPhase = { type: phase.type, prompt: summarizingPrompt }
-            console.log("updatedPhase ", updatedPhase)
-            await updatePhase(phase._additional.id, updatedPhase)
-            setShowManager(true)
-            setRequests([...requests, ...contexts])
+            const copiedPhase = { ...phase };
+            delete copiedPhase.intermediates;
+            delete copiedPhase._additional;
+            delete copiedPhase.filters;
+            delete copiedPhase.__typename;
+            delete copiedPhase.hideBranch;
+            const updatedPhase = {
+              ...copiedPhase,
+              prompt: summarizingPrompt,
+            };
+            console.log("updatedPhase ", updatedPhase);
+            await updatePhase(phase._additional.id, updatedPhase);
+            // setShowManager(true)
+            // setRequests([...requests, ...contexts])
           }}
         >
           Run Prompts

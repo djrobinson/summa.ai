@@ -1,28 +1,32 @@
+import axios from "axios";
+import { buildClientSchema, getIntrospectionQuery } from "graphql";
 import React from "react";
 import {
-  deleteWorkflow,
   createObject,
   createRelationship,
+  deleteWorkflow,
 } from "../utils/weaviateServices";
-import { buildClientSchema, getIntrospectionQuery } from "graphql";
-import axios from "axios";
 
+import { gql, useLazyQuery, useQuery } from "@apollo/client";
 import {
-  Wrap,
-  Flex,
   Box,
-  Heading,
-  Text,
-  useColorModeValue,
   Button,
-  Input,
+  Flex,
   FormLabel,
+  Heading,
+  Input,
   Select,
+  Text,
+  Wrap,
+  useColorModeValue,
 } from "@chakra-ui/react";
-import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
 import { Link, useNavigate } from "react-router-dom";
-import { FETCH_DATA_SOURCE, FETCH_DATA_SOURCES, createDataSourcePhase } from "./phases/DataSourceSelector";
+import {
+  FETCH_DATA_SOURCE,
+  FETCH_DATA_SOURCES,
+  createDataSourcePhase,
+} from "./phases/DataSourceSelector";
 
 const FETCH_WORKFLOWS = gql`
   {
@@ -41,7 +45,6 @@ const FETCH_WORKFLOWS = gql`
             mode
             type
             prompt
-            order
             filters {
               ... on Filter {
                 operator
@@ -68,7 +71,6 @@ const FETCH_WORKFLOWS = gql`
     }
   }
 `;
-
 
 const FETCH_WORKFLOW = gql`
   query GetWorkflow($id: String!) {
@@ -115,7 +117,6 @@ const FETCH_WORKFLOW = gql`
   }
 `;
 
-
 const WorkflowTile = ({
   phaseId,
   phase,
@@ -129,36 +130,50 @@ const WorkflowTile = ({
   return <Heading>Workflow Tile</Heading>;
 };
 
-const copyWorkflow = async (newWorkflowTitle, workflowToCopy, templateDataSource, intermediates) => {
-  console.log("INPUTS TO COPY WORKFLOW: ", newWorkflowTitle, workflowToCopy, templateDataSource, intermediates)
+const copyWorkflow = async (
+  newWorkflowTitle,
+  workflowToCopy,
+  templateDataSource,
+  intermediates
+) => {
+  console.log(
+    "INPUTS TO COPY WORKFLOW: ",
+    newWorkflowTitle,
+    workflowToCopy,
+    templateDataSource,
+    intermediates
+  );
   const wf = await createObject("Workflow", {
     name: newWorkflowTitle,
   });
-  console.log('CREATE WORKFLOW: ', wf)
+  console.log("CREATE WORKFLOW: ", wf);
   await workflowToCopy.forEach(async (phaseToCopy) => {
-    const cleanedPhased = { ...phaseToCopy }
-    delete cleanedPhased._additional
-    delete cleanedPhased.searches
-    delete cleanedPhased.filters
-    delete cleanedPhased.sorts
+    const cleanedPhased = { ...phaseToCopy };
+    delete cleanedPhased._additional;
+    delete cleanedPhased.searches;
+    delete cleanedPhased.filters;
+    delete cleanedPhased.sorts;
     // if DATA_SOURCE, replace with templateDataSource
     let phaseResult;
-    if (cleanedPhased.type === 'DATA_SOURCE') {
-      phaseResult = await createDataSourcePhase(wf.id, templateDataSource, intermediates)
-
+    if (cleanedPhased.type === "DATA_SOURCE") {
+      phaseResult = await createDataSourcePhase(
+        wf.id,
+        templateDataSource,
+        intermediates
+      );
     } else {
       phaseResult = await createObject("Phase", {
-        ...cleanedPhased
-      })
+        ...cleanedPhased,
+      });
     }
     // CREATE SEARCHES
     if (!isEmpty(phaseToCopy.searches)) {
       phaseToCopy.searches.forEach(async (s) => {
-        console.log("CREATING SEARCH: ", s)
-        const filter = await createObject('Search', {
+        console.log("CREATING SEARCH: ", s);
+        const filter = await createObject("Search", {
           objectPath: s.objectPath,
-          value: s.value
-        })
+          value: s.value,
+        });
         await createRelationship(
           "Search",
           filter.id,
@@ -167,13 +182,13 @@ const copyWorkflow = async (newWorkflowTitle, workflowToCopy, templateDataSource
           phaseResult.id,
           "searches"
         );
-      })
+      });
     }
     // TECH DEBT! JUST GET DEMO WORKING. THESE NEED TO BE DONE TOO.
     // CREATE FILTERS
 
     // CREATE SORTS
-    console.log('PHASE RESULT: ', phaseResult)
+    console.log("PHASE RESULT: ", phaseResult);
     await createRelationship(
       "Workflow",
       wf.id,
@@ -182,24 +197,30 @@ const copyWorkflow = async (newWorkflowTitle, workflowToCopy, templateDataSource
       phaseResult.id,
       "workflow"
     );
-  })
-  console.log('successfully copied workflow!!!')
-  return wf.id
-}
+  });
+  console.log("successfully copied workflow!!!");
+  return wf.id;
+};
 
 const WorkflowBuilder = () => {
   const navigate = useNavigate();
   const [phases, setPhases] = React.useState([]);
   const [schema, setSchema] = React.useState(null);
   const [types, setTypes] = React.useState({});
-  const [workflowToCopy, setWorkflowToCopy] = React.useState([])
-  const [copyDataSource, setCopyDataSource] = React.useState([])
+  const [workflowToCopy, setWorkflowToCopy] = React.useState([]);
+  const [copyDataSource, setCopyDataSource] = React.useState([]);
   const [newWorkflowTitle, setNewWorkflowTitle] = React.useState("");
   const [copiedWorkflowTitle, setCopiedWorkflowTitle] = React.useState("");
   const [fetchWorkflows, { data, error, loading }] =
     useLazyQuery(FETCH_WORKFLOWS);
-  const [fetchCopyWorkflow, { data: copyWorkflowData, error: errorWorkflowData, loading: loadingWorkflowData }] =
-  useLazyQuery(FETCH_WORKFLOW, {
+  const [
+    fetchCopyWorkflow,
+    {
+      data: copyWorkflowData,
+      error: errorWorkflowData,
+      loading: loadingWorkflowData,
+    },
+  ] = useLazyQuery(FETCH_WORKFLOW, {
     variables: { id: workflowToCopy },
   });
   const [
@@ -209,24 +230,35 @@ const WorkflowBuilder = () => {
     variables: { id: copyDataSource },
   });
   const intermediates =
-    !isEmpty(dsData) && !isEmpty(dsData.Get.DataSource) && !isEmpty(dsData.Get.DataSource[0].intermediates)
+    !isEmpty(dsData) &&
+    !isEmpty(dsData.Get.DataSource) &&
+    !isEmpty(dsData.Get.DataSource[0].intermediates)
       ? dsData.Get.DataSource[0].intermediates
       : [];
-  console.log('DS INTERMEDIATES: ', intermediates)
-  const { data: dataSourceData, error: dataSourceError, loading: dataSourceLoading } = useQuery(FETCH_DATA_SOURCES)
+  console.log("DS INTERMEDIATES: ", intermediates);
+  const {
+    data: dataSourceData,
+    error: dataSourceError,
+    loading: dataSourceLoading,
+  } = useQuery(FETCH_DATA_SOURCES);
   console.log("workflows: ", data, error, loading);
   console.log("dataSourceData: ", dataSourceData);
   console.log("copyWorkflowData: ", copyWorkflowData);
-  const copiedWorkflow = !isEmpty(copyWorkflowData) && !isEmpty(copyWorkflowData.Get.Workflow) ? copyWorkflowData.Get.Workflow[0].phases : []
+  const copiedWorkflow =
+    !isEmpty(copyWorkflowData) && !isEmpty(copyWorkflowData.Get.Workflow)
+      ? copyWorkflowData.Get.Workflow[0].phases
+      : [];
   console.log("copiedWorkflow: ", copiedWorkflow);
   const workflows = !isEmpty(data) ? data.Get.Workflow : [];
-  const dataSources = !isEmpty(dataSourceData) ? dataSourceData.Get.DataSource : []
+  const dataSources = !isEmpty(dataSourceData)
+    ? dataSourceData.Get.DataSource
+    : [];
   React.useEffect(() => {
-    fetchCopyWorkflow()
-  }, [workflowToCopy, fetchCopyWorkflow])
+    fetchCopyWorkflow();
+  }, [workflowToCopy, fetchCopyWorkflow]);
   React.useEffect(() => {
-    fetchDataSource()
-  }, [copyDataSource, fetchDataSource])
+    fetchDataSource();
+  }, [copyDataSource, fetchDataSource]);
   React.useEffect(() => {
     fetchWorkflows();
   }, [fetchWorkflows]);
@@ -262,13 +294,13 @@ const WorkflowBuilder = () => {
             data sources using Open AI's GPT-4 model.
           </Text>
           <FormLabel size="xs">Workflow Name:</FormLabel>
-         
+
           <Flex justify="flex-end">
-          <Input
-            placeholder="Name..."
-            value={newWorkflowTitle}
-            onChange={(e) => setNewWorkflowTitle(e.target.value)}
-          />
+            <Input
+              placeholder="Name..."
+              value={newWorkflowTitle}
+              onChange={(e) => setNewWorkflowTitle(e.target.value)}
+            />
             <Button
               ml="10px"
               onClick={async () => {
@@ -301,7 +333,7 @@ const WorkflowBuilder = () => {
           <Select
             placeholder="Copy from Workfow..."
             onChange={(e) => {
-                setWorkflowToCopy(e.target.value)
+              setWorkflowToCopy(e.target.value);
             }}
             value={workflowToCopy}
           >
@@ -309,35 +341,40 @@ const WorkflowBuilder = () => {
               <option value={k._additional.id}>{k.name}</option>
             ))}
           </Select>
-          <FormLabel size="xs">Data Source
-          </FormLabel>
+          <FormLabel size="xs">Data Source</FormLabel>
           <Select
             placeholder="Template..."
             onChange={(e) => {
-              setCopyDataSource(e.target.value)
+              setCopyDataSource(e.target.value);
             }}
             value={copyDataSource}
-
           >
             {dataSources.map((k) => (
               <option value={k._additional.id}>{k.name}</option>
             ))}
           </Select>
-          <FormLabel pt="10px" size="xs">Workflow Name:</FormLabel>
-          
+          <FormLabel pt="10px" size="xs">
+            Workflow Name:
+          </FormLabel>
+
           <Flex justify="flex-end">
-          <Input
-            placeholder="Name..."
-            value={copiedWorkflowTitle}
-            onChange={(e) => setCopiedWorkflowTitle(e.target.value)}
-          />
+            <Input
+              placeholder="Name..."
+              value={copiedWorkflowTitle}
+              onChange={(e) => setCopiedWorkflowTitle(e.target.value)}
+            />
             <Button
               ml="10px"
               onClick={async () => {
-                const wf = await copyWorkflow(copiedWorkflowTitle, copiedWorkflow, copyDataSource, intermediates)
+                const wf = await copyWorkflow(
+                  copiedWorkflowTitle,
+                  copiedWorkflow,
+                  copyDataSource,
+                  intermediates
+                );
                 console.log("NEW WF: ", `/workflows/${wf}`);
                 setTimeout(() => {
-                  navigate(`/workflows/${wf}`)
+                  navigate(`/workflows/${wf}`);
                 }, 2000);
               }}
               colorScheme="teal"
@@ -346,7 +383,6 @@ const WorkflowBuilder = () => {
               Create
             </Button>
           </Flex>
-          
         </Box>
         {workflows.map((w) => (
           <Box
@@ -360,10 +396,15 @@ const WorkflowBuilder = () => {
             rounded={"md"}
             p={6}
           >
-            <Text fontSize="xl" fontWeight="bold">{w.name}</Text>
-            <Text pt="30px" align="justify">{w.description}</Text>
+            <Text fontSize="xl" fontWeight="bold">
+              {w.name}
+            </Text>
+            <Text pt="30px" align="justify">
+              {w.description}
+            </Text>
             <Flex pt="30px" justify="space-around">
-              <Button size="sm"
+              <Button
+                size="sm"
                 onClick={() => {
                   deleteWorkflow(w._additional.id, fetchWorkflows);
                 }}
@@ -372,9 +413,9 @@ const WorkflowBuilder = () => {
                 Delete
               </Button>
               <Button size="sm" bg="teal" color="white">
-              <Link to={`${w._additional.id}`}  mt="40px">
-                Edit
-              </Link>
+                <Link to={`${w._additional.id}`} mt="40px">
+                  Edit
+                </Link>
               </Button>
             </Flex>
           </Box>
