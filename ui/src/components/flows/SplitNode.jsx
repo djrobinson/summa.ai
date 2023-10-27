@@ -2,7 +2,7 @@ import React from "react";
 
 import { Box, Text } from "@chakra-ui/react";
 
-const FilterNode = ({ type }) => {
+const SplitNode = ({ type }) => {
   return (
     <Box
       rounded={"md"}
@@ -10,10 +10,9 @@ const FilterNode = ({ type }) => {
       align="flex-start"
       justify="flex-start"
     >
-      <Text fontWeight={800}>Filter/Sort</Text>
-      <Text>Filters: {prompt}</Text>
+      <Text fontWeight={800}>Split</Text>
     </Box>
   );
 };
 
-export default FilterNode;
+export default SplitNode;

@@ -10,7 +10,7 @@ import ReportWizard from "./phases/ReportWizard";
 import SplitWizard from "./phases/SplitWizard";
 import StaticDataSource from "./phases/StaticDataSource";
 
-const PhaseRouter = ({ phase, prevPhaseID, workflowID }) => {
+const PhaseRouter = ({ phase, prevPhaseID, workflowID, updatePhase }) => {
   const elements = [];
   if (phase.type === "DATA_SOURCE") {
     elements.push(
@@ -35,6 +35,7 @@ const PhaseRouter = ({ phase, prevPhaseID, workflowID }) => {
         phase={phase}
         phaseID={phase._additional.id}
         prevPhaseID={prevPhaseID}
+        updatePhase={updatePhase}
       />
     );
   }

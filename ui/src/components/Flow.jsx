@@ -15,14 +15,17 @@ import ReactFlow, {
 
 import "reactflow/dist/style.css";
 import Checkmark from "./Checkmark";
+import CategorizeNode from "./flows/CategorizeNode";
+import CombineNode from "./flows/CombineNode";
 import DataSourceNode from "./flows/DataSourceNode";
 import FilterNode from "./flows/FilterNode";
 import LLMPrompNode from "./flows/LLMPromptNode";
 import ReportNode from "./flows/ReportNode";
+import SplitNode from "./flows/SplitNode";
 
 const Options = (props) => {
   const { data } = props;
-  console.log("WHAT props: ", props);
+  const fixedId = props.id.replace("choose", "");
   return (
     <Flex align={"center"}>
       <Box rounded={"md"} align="center">
@@ -40,19 +43,11 @@ const Options = (props) => {
             rounded={"full"}
             flex={"1 0 auto"}
             onClick={() => {
-              const fixedId = props.id.replace("choose", "");
-              console.log("fixedId ", fixedId);
               data.addPhase({
                 type: "LLM_PROMPT",
                 workflow_step: data.workflow_step,
                 step_order: data.step_order,
                 source_id: fixedId,
-              });
-
-              data.createOptions((prev) => {
-                const removed = prev.filter((p) => p.id !== props.id);
-                console.log("HERE WE IS ", removed, props.id);
-                return removed;
               });
             }}
           >
@@ -66,9 +61,16 @@ const Options = (props) => {
             colorScheme="teal"
             rounded={"full"}
             flex={"1 0 auto"}
-            onClick={() => {}}
+            onClick={() => {
+              data.addPhase({
+                type: "FILTER_SORT",
+                workflow_step: data.workflow_step,
+                step_order: data.step_order,
+                source_id: fixedId,
+              });
+            }}
           >
-            Filter Text
+            Filter
           </Button>
         </Flex>
         <Flex>
@@ -80,7 +82,14 @@ const Options = (props) => {
             colorScheme="teal"
             rounded={"full"}
             flex={"1 0 auto"}
-            onClick={() => {}}
+            onClick={() => {
+              data.addPhase({
+                type: "CATEGORIZE",
+                workflow_step: data.workflow_step,
+                step_order: data.step_order,
+                source_id: fixedId,
+              });
+            }}
           >
             Categorize
           </Button>
@@ -92,9 +101,56 @@ const Options = (props) => {
             colorScheme="teal"
             rounded={"full"}
             flex={"1 0 auto"}
-            onClick={() => {}}
+            onClick={() => {
+              data.addPhase({
+                type: "REPORT",
+                workflow_step: data.workflow_step,
+                step_order: data.step_order,
+                source_id: fixedId,
+              });
+            }}
           >
             Add to Report
+          </Button>
+        </Flex>
+        <Flex>
+          <Button
+            size="xs"
+            w="50%"
+            m="5px"
+            mt={"5px"}
+            colorScheme="teal"
+            rounded={"full"}
+            flex={"1 0 auto"}
+            onClick={() => {
+              data.addPhase({
+                type: "SPLIT",
+                workflow_step: data.workflow_step,
+                step_order: data.step_order,
+                source_id: fixedId,
+              });
+            }}
+          >
+            Split
+          </Button>
+          <Button
+            size="xs"
+            w="50%"
+            m="5px"
+            mt={"5px"}
+            colorScheme="teal"
+            rounded={"full"}
+            flex={"1 0 auto"}
+            onClick={() => {
+              data.addPhase({
+                type: "COMBINE",
+                workflow_step: data.workflow_step,
+                step_order: data.step_order,
+                source_id: fixedId,
+              });
+            }}
+          >
+            Combine
           </Button>
         </Flex>
       </Box>
@@ -114,6 +170,9 @@ const NODE_TYPES = {
   DATA_SOURCE: DataSourceNode,
   FILTER_SORT: FilterNode,
   REPORT: ReportNode,
+  CATEGORIZE: CategorizeNode,
+  COMBINE: CombineNode,
+  SPLIT: SplitNode,
 };
 
 const Node = (n) => {
@@ -196,16 +255,11 @@ const Node = (n) => {
           onClick={() => {
             const workflowStep = data.workflow_step + 1;
             const stepOrder = data.step_order + 1.5;
-            // TODO: CALCULATE Y BASED ON # OF PHASE ITEMS
             data.createOptions((prev) => [
               ...prev,
               {
                 id: `choose${n.id}`,
                 type: "Options",
-                // position: {
-                //   x: workflowStep * 275,
-                //   y: stepOrder * 150,
-                // },
                 data: {
                   label: "CHOOSE",
                   workflow_step: workflowStep,
@@ -255,7 +309,7 @@ export default function Flow({ nodes = [], edges = [] }) {
   return (
     <Box
       bg="white"
-      style={{ width: "calc(100vw - 290px)", height: "calc(100vh - 160px)" }}
+      style={{ width: "calc(100vw)", height: "calc(100vh - 160px)" }}
     >
       <ReactFlow
         nodes={renderNodes}

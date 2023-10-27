@@ -17,7 +17,10 @@ import { isEmpty, orderBy, sortBy } from "lodash";
 import { FaPlay, FaRegSave, FaStop } from "react-icons/fa";
 import { FiRefreshCcw } from "react-icons/fi";
 import Flow from "../components/Flow";
-import { createPhase } from "../utils/weaviateServices";
+import {
+  createPhase,
+  updatePhase as svcUpdatePhase,
+} from "../utils/weaviateServices";
 import PhaseRouter from "./PhaseRouter";
 import DataSourceSelector from "./phases/DataSourceSelector";
 
@@ -37,12 +40,46 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
   const [tempOptionPhases, setTempOptionPhases] = React.useState([]);
   const [showDataSource, setShowDataSource] = React.useState(false);
   const [editPhase, setEditPhase] = React.useState(null);
+
+  const addPhase = async (p) => {
+    const phaseId = await createPhase(workflowID, p);
+    p._additional = { id: phaseId };
+    const newPhases = [...inMemoryPhases, { ...p }];
+    setInMemoryPhases(newPhases);
+  };
   let fullEditPhase = {};
   if (!isEmpty(editPhase)) {
-    fullEditPhase = inMemoryPhases.filter(
+    // this is probably a good place to pick off stuff that can't be saved
+    // upon update. This means it will be coupled with updatePhase below
+    const phaseProps = [
+      "type",
+      "prompt",
+      "selection",
+      "workflow_step",
+      "step_order",
+      "source_id",
+      "target_id",
+    ];
+    const fullEditPhaseMess = inMemoryPhases.filter(
       (imp) => imp._additional.id === editPhase
     )[0];
+    phaseProps.forEach((k) => {
+      fullEditPhase[k] = fullEditPhaseMess[k];
+    });
+    fullEditPhase._additional = { id: editPhase };
   }
+  const updatePhase = async (pid, p) => {
+    const copiedPhase = { ...p };
+    delete copiedPhase._additional;
+    const phasesToCopy = [...inMemoryPhases];
+    const removeCurrent = phasesToCopy.filter(
+      (ptc) => ptc._additional.id !== pid
+    );
+    await svcUpdatePhase(pid, copiedPhase);
+
+    setInMemoryPhases([...removeCurrent, p]);
+  };
+
   const allPs = phases.map(
     (phase) => `{
     path: ["id"],
@@ -50,16 +87,6 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
     valueText: "${phase._additional.id}",
   }`
   );
-  const addPhase = async (p) => {
-    const phaseId = await createPhase(workflowID, p);
-    p._additional = { id: phaseId };
-    const newPhases = [...inMemoryPhases, { ...p }];
-    setInMemoryPhases(newPhases);
-  };
-  const updatePhase = async (p) => {
-    const updatedPhase = await updatePhase(p.id, p);
-    setInMemoryPhases([]);
-  };
   const FETCH_PHASE_INTERMEDIATES = gql`
   query GetPhaseIntermediates {
     Get {
@@ -138,14 +165,12 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
     return {
       id: p._additional.id,
       type: "Node",
-      // position: {
-      //   x: p.workflow_step * 280 + 50,
-      //   y: p.step_order * 150,
-      // },
+      draggable: false,
       data: {
         ...p,
         createOptions: setTempOptionPhases,
         addPhase: addPhase,
+        updatePhase: updatePhase,
         setEditPhase: setEditPhase,
         runState:
           p.intermediates && p.intermediates.length
@@ -164,14 +189,9 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
     );
     if (!sourceReferenced) {
       imp.hideBranch = true;
-      // TODO: CALCULATE Y BASED ON # OF PHASE ITEMS
       const node = {
         id: `choose${nid}`,
         type: "Options",
-        // position: {
-        //   x: (imp.workflow_step + 1) * 280 + 50,
-        //   y: imp.step_order * 146,
-        // },
         data: {
           label: "CHOOSE",
           workflow_step: imp.workflow_step + 1,
@@ -339,6 +359,7 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
               phase={fullEditPhase}
               workflowID={workflowID}
               prevPhaseID={fullEditPhase.source_id}
+              updatePhase={updatePhase}
             />
           </ModalBody>
         </ModalContent>

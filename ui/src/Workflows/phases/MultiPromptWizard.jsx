@@ -5,7 +5,6 @@ import { useRecoilState } from "recoil";
 import PromptControls from "../../RequestManager/PromptControls";
 import IntermediatesPreview from "../../components/IntermediatesPreview";
 import { requestsState } from "../../recoil/atoms";
-import { updatePhase } from "../../utils/weaviateServices";
 
 export const GET_INTERMEDIATES = gql`
   query GetIntermediates($id: String!) {
@@ -24,7 +23,7 @@ export const GET_INTERMEDIATES = gql`
   }
 `;
 
-const MultiPromptWizard = ({ phase, phaseID, prevPhaseID }) => {
+const MultiPromptWizard = ({ phase, phaseID, prevPhaseID, updatePhase }) => {
   const multiPrompt = phase.prompt;
   console.log("MULTIPROMPT PHASE: ", multiPrompt);
   const [summarizingPrompt, setSummarizingPrompt] = React.useState(multiPrompt);
@@ -108,11 +107,6 @@ const MultiPromptWizard = ({ phase, phaseID, prevPhaseID }) => {
           flex={"1 0 auto"}
           onClick={async () => {
             const copiedPhase = { ...phase };
-            delete copiedPhase.intermediates;
-            delete copiedPhase._additional;
-            delete copiedPhase.filters;
-            delete copiedPhase.__typename;
-            delete copiedPhase.hideBranch;
             const updatedPhase = {
               ...copiedPhase,
               prompt: summarizingPrompt,

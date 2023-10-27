@@ -1,38 +1,32 @@
 "use client";
 
-import { Outlet, Link } from "react-router-dom";
 import {
-  IconButton,
   Avatar,
   Box,
+  Button,
   CloseButton,
   Flex,
   HStack,
-  VStack,
   Icon,
-  useColorModeValue,
-  Text,
-  Drawer,
-  DrawerContent,
-  useDisclosure,
+  IconButton,
   Menu,
   MenuButton,
   MenuDivider,
   MenuItem,
   MenuList,
-  Button,
-  Heading,
-  Stack,
-  Alert,
-  AlertIcon
+  Text,
+  VStack,
+  useColorModeValue,
+  useDisclosure,
 } from "@chakra-ui/react";
+import { Link, Outlet } from "react-router-dom";
 
-import { FiMenu, FiBell, FiChevronDown } from "react-icons/fi";
+import { FiChevronDown, FiMenu } from "react-icons/fi";
 import { useRecoilState } from "recoil";
-import { showRequestManagerState,requestsState } from "./recoil/atoms";
+import Alerts from "./Alerts";
 import RequestManager from "./RequestManager/RequestManager";
 import RequestsButton from "./RequestsButton";
-import Alerts from "./Alerts";
+import { showRequestManagerState } from "./recoil/atoms";
 
 const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
   return (
@@ -47,21 +41,31 @@ const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
       {...rest}
     >
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Text fontSize="3xl" >
-          <Link to="/"><Text as="span" color="teal">Summa</Text><Text as="span" color="darkGray">.ai</Text></Link>
+        <Text fontSize="3xl">
+          <Link to="/">
+            <Text as="span" color="teal">
+              Summa
+            </Text>
+            <Text as="span" color="darkGray">
+              .ai
+            </Text>
+          </Link>
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
-      {!hideOptions &&(
-      <><NavItem>
-        <Link to="/data">Data Sources</Link>
-      </NavItem>
-      <NavItem>
-        <Link to="/workflows">Workflows</Link>
-      </NavItem>
-      <NavItem>
-        <Link to="/reports">Reports</Link>
-      </NavItem></>)}
+      {!hideOptions && (
+        <>
+          <NavItem>
+            <Link to="/data">Data Sources</Link>
+          </NavItem>
+          <NavItem>
+            <Link to="/workflows">Workflows</Link>
+          </NavItem>
+          <NavItem>
+            <Link to="/reports">Reports</Link>
+          </NavItem>
+        </>
+      )}
       <NavItem>
         <Link to="/account">Account</Link>
       </NavItem>
@@ -106,21 +110,31 @@ const NavItem = ({ icon, children, ...rest }) => {
   );
 };
 
-const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
-  const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
-  
+const MobileNav = ({ onOpen, hideOptions }) => {
+  const [showRequests, setShowRequests] = useRecoilState(
+    showRequestManagerState
+  );
+
   return (
     <Flex
-      ml={{ base: 0, md: 60 }}
       px={{ base: 4, md: 4 }}
       height="20"
       alignItems="center"
       bg={useColorModeValue("white", "gray.900")}
       borderBottomWidth="1px"
       borderBottomColor={useColorModeValue("gray.200", "gray.700")}
-      justifyContent={{ base: "space-between", md: "flex-end" }}
-      {...rest}
+      justifyContent={{ base: "space-between" }}
     >
+      <Text fontSize="3xl" justifySelf={"flex-start"}>
+        <Link to="/">
+          <Text as="span" color="teal">
+            Summa
+          </Text>
+          <Text as="span" color="darkGray">
+            .ai
+          </Text>
+        </Link>
+      </Text>
       <IconButton
         display={{ base: "flex", md: "none" }}
         onClick={onOpen}
@@ -174,15 +188,19 @@ const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
               bg={useColorModeValue("white", "gray.900")}
               borderColor={useColorModeValue("gray.200", "gray.700")}
             >
-              {!hideOptions && (<><MenuItem>
-                <Link to="/workflows">Workflows</Link>
-              </MenuItem>
-              <MenuItem>
-                <Link to="/data">Data Sources</Link>
-              </MenuItem>
-              <MenuItem>
-                <Link to="/reports">Reports</Link>
-              </MenuItem></>)}
+              {!hideOptions && (
+                <>
+                  <MenuItem>
+                    <Link to="/workflows">Workflows</Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link to="/data">Data Sources</Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link to="/reports">Reports</Link>
+                  </MenuItem>
+                </>
+              )}
               <MenuItem>
                 <Link to="/account">Account</Link>
               </MenuItem>
@@ -199,41 +217,41 @@ const MobileNav = ({ onOpen, hideOptions, ...rest }) => {
 
 const Layout = ({ hideOptions = true }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [showRequests, setShowRequests] = useRecoilState(showRequestManagerState);
+  const [showRequests, setShowRequests] = useRecoilState(
+    showRequestManagerState
+  );
 
   return (
     <Box minH="100vh" bg={useColorModeValue("gray.100", "gray.900")}>
-      <SidebarContent
-      hideOptions={hideOptions}
-        onClose={() => onClose}
-        display={{ base: "none", md: "block" }}
-      />
-      <Drawer
-        isOpen={isOpen}
-        placement="left"
-        onClose={onClose}
-        returnFocusOnClose={false}
-        onOverlayClick={onClose}
-        size="full"
-      >
-        <DrawerContent>
-          <SidebarContent hideOptions={hideOptions} onClose={onClose} />
-        </DrawerContent>
-      </Drawer>
       <MobileNav onOpen={onOpen} hideOptions={hideOptions} />
-      <Box pos="relative" ml={{ base: 0, md: 60 }} p="4">
+      <Box pos="relative" p="4">
         <Alerts w={showRequests ? "calc(98% - 400px)" : "98%"} zIndex={5} />
         <Outlet />
-        <Box p="20px" w="400px" style={{ display: showRequests ? 'block' : 'none', position: 'absolute', right: 0, top: 0, height: 'calc(100vh - 80px)', background: 'white', borderLeft: 'solid 1px lightgray'}}>
-          
-          <RequestManager/>
-          <Button variant='outline' mr={3} onClick={() => {setShowRequests(false)}}>
-              Exit
+        <Box
+          p="20px"
+          w="500px"
+          style={{
+            display: showRequests ? "block" : "none",
+            position: "absolute",
+            right: 0,
+            top: 0,
+            height: "calc(100vh - 80px)",
+            background: "white",
+            borderLeft: "solid 1px lightgray",
+          }}
+        >
+          <RequestManager />
+          <Button
+            variant="outline"
+            mr={3}
+            onClick={() => {
+              setShowRequests(false);
+            }}
+          >
+            Exit
           </Button>
+        </Box>
       </Box>
-      </Box>
-      
-      
     </Box>
   );
 };
