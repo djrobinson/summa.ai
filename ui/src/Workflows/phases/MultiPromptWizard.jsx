@@ -1,10 +1,8 @@
 import { gql, useQuery } from "@apollo/client";
 import { Box, Button, Flex, FormLabel, Text, Textarea } from "@chakra-ui/react";
 import React from "react";
-import { useRecoilState } from "recoil";
 import PromptControls from "../../RequestManager/PromptControls";
 import IntermediatesPreview from "../../components/IntermediatesPreview";
-import { requestsState } from "../../recoil/atoms";
 
 export const GET_INTERMEDIATES = gql`
   query GetIntermediates($id: String!) {
@@ -27,7 +25,6 @@ const MultiPromptWizard = ({ phase, phaseID, prevPhaseID, updatePhase }) => {
   const multiPrompt = phase.prompt;
   console.log("MULTIPROMPT PHASE: ", multiPrompt);
   const [summarizingPrompt, setSummarizingPrompt] = React.useState(multiPrompt);
-  const [requests, setRequests] = useRecoilState(requestsState);
   const [showManager, setShowManager] = React.useState(false);
   const { data, error, loading } = useQuery(GET_INTERMEDIATES, {
     variables: {
@@ -113,8 +110,6 @@ const MultiPromptWizard = ({ phase, phaseID, prevPhaseID, updatePhase }) => {
             };
             console.log("updatedPhase ", updatedPhase);
             await updatePhase(phase._additional.id, updatedPhase);
-            // setShowManager(true)
-            // setRequests([...requests, ...contexts])
           }}
         >
           Run Prompts

@@ -2,11 +2,8 @@ import React from "react";
 
 import { gql, useQuery } from "@apollo/client";
 import {
-  Box,
   Button,
   Flex,
-  Heading,
-  Icon,
   Modal,
   ModalBody,
   ModalContent,
@@ -14,8 +11,6 @@ import {
   Stack,
 } from "@chakra-ui/react";
 import { isEmpty, orderBy, sortBy } from "lodash";
-import { FaPlay, FaRegSave, FaStop } from "react-icons/fa";
-import { FiRefreshCcw } from "react-icons/fi";
 import Flow from "../components/Flow";
 import {
   createPhase,
@@ -44,12 +39,17 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
   const addPhase = async (p) => {
     const phaseId = await createPhase(workflowID, p);
     p._additional = { id: phaseId };
+    console.log("FROM ADD PHASE: ", p);
     const newPhases = [...inMemoryPhases, { ...p }];
     setInMemoryPhases(newPhases);
   };
   let fullEditPhase = {};
   if (!isEmpty(editPhase)) {
-    // this is probably a good place to pick off stuff that can't be saved
+    // TECH DEBT
+    // Not ideal to do this! It's a sneaky bit of code that makes Phases not get props
+    // you'd normally expect.
+    // Eventual refactor: Need to handle updates a little differently to accomodate rels gracefully
+    // But anyways - pick off stuff that can't be saved
     // upon update. This means it will be coupled with updatePhase below
     const phaseProps = [
       "type",
@@ -59,24 +59,33 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
       "step_order",
       "source_id",
       "target_id",
+      "filters",
+      "searches",
+      "limit",
     ];
     const fullEditPhaseMess = inMemoryPhases.filter(
       (imp) => imp._additional.id === editPhase
     )[0];
     phaseProps.forEach((k) => {
-      fullEditPhase[k] = fullEditPhaseMess[k];
+      if (fullEditPhaseMess[k]) {
+        fullEditPhase[k] = fullEditPhaseMess[k];
+      }
     });
     fullEditPhase._additional = { id: editPhase };
   }
+  console.log("fullEditPhase ", fullEditPhase);
   const updatePhase = async (pid, p) => {
     const copiedPhase = { ...p };
     delete copiedPhase._additional;
+    delete copiedPhase.searches;
+    delete copiedPhase.filters;
     const phasesToCopy = [...inMemoryPhases];
     const removeCurrent = phasesToCopy.filter(
       (ptc) => ptc._additional.id !== pid
     );
     await svcUpdatePhase(pid, copiedPhase);
 
+    p._additional = { id: pid };
     setInMemoryPhases([...removeCurrent, p]);
   };
 
@@ -135,7 +144,7 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
 
   const { data, error, loading } = useQuery(FETCH_PHASE_INTERMEDIATES);
 
-  console.log("Workflow: ", data, error, loading);
+  console.log("PHASES: ", data, error, loading);
   React.useEffect(() => {
     if (!isEmpty(data)) {
       const sortedPhases = sortBy(data.Get.Phase, "order");
@@ -256,7 +265,7 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
   });
   const levelCounts = Object.values(nodeCountPerLevel);
   const maxLevelCount = Math.max(...levelCounts);
-  const BASE_ROW_HEIGHT = 150;
+  const BASE_ROW_HEIGHT = 180;
   const nodesWithPositions = nodesOrdered.map((n) => {
     const yMultiplier =
       (maxLevelCount * BASE_ROW_HEIGHT) /
@@ -285,37 +294,24 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
   return (
     <>
       <Stack>
-        <Flex justify="space-between" align="center">
-          <Heading size="lg" fontWeight="300" color="teal.600">
-            {workflowTitle}
-          </Heading>
-          <Box mr="30px">
-            <Icon m="8px" color="teal.400" as={FaPlay} w={5} h={5} />
-            <Icon m="8px" color="maroon" as={FaStop} w={5} h={5} />
-            <Icon m="8px" color="teal.700" as={FiRefreshCcw} w={5} h={5} />
-            <Icon m="8px" color="teal.700" as={FaRegSave} w={5} h={5} />
-          </Box>
-        </Flex>
-
         <Flex>
           <Button
             onClick={() => {
               setShowDataSource(true);
             }}
-            zIndex={2}
             pos="absolute"
-            top="90px"
+            top="30px"
             left="40px"
             colorScheme="teal"
             size="xs"
             rounded="full"
+            zIndex={2}
           >
             + New Data Source
           </Button>
           <Button
-            zIndex={2}
             pos="absolute"
-            top="90px"
+            top="30px"
             right="60px"
             colorScheme="teal"
             size="xs"

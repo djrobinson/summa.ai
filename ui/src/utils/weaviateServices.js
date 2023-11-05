@@ -1,102 +1,191 @@
-import weaviate from 'weaviate-ts-client'
+import weaviate from "weaviate-ts-client";
 
 const client = weaviate.client({
-  scheme: 'http',
-  host: 'localhost:8080', // Replace with your endpoint
+  scheme: "http",
+  host: "localhost:8080", // Replace with your endpoint
   headers: {
-    'X-Openai-Api-Key':
-      '***REMOVED***',
+    "X-Openai-Api-Key": "***REMOVED***",
   },
-})
+});
+
+export const getPhase = async (id) => {
+  const data = await client.graphql
+    .get()
+    .withClassName("Phase")
+    .withFields(
+      `
+    prompt
+    type
+    _additional {
+      id
+    }
+    `
+    )
+    .withWhere({
+      operator: "Equal",
+      path: ["id"],
+      valueText: id,
+    })
+    .do();
+  console.log("RETRIEVED PHASE: ", data);
+  return data;
+};
+
+export const getIntermediatesForPhase = async (type, id) => {
+  const data = await client.graphql
+    .get()
+    .withClassName(type)
+    .withFields(
+      `
+    prompt
+    type
+    intermediates {
+      ... on Intermediate {
+        _additional {
+          id
+        }
+        text
+        order
+      }
+    }
+    `
+    )
+    .withWhere({
+      operator: "Equal",
+      path: ["id"],
+      valueText: id,
+    })
+    .do();
+  console.log("RETRIEVED: ", data);
+  return data;
+};
+
+export const getBatchByID = async (type, id) => {
+  const data = await client.graphql
+    .get()
+    .withClassName(type)
+    .withFields(
+      `
+    filters {
+      ... on Filter {
+        operator
+        objectPath
+        value
+      }
+    }
+    searches {
+      ... on Search {
+        objectPath
+        value
+      }
+    }
+    sorts {
+      ... on Sort {
+        objectPath
+        order
+      }
+    }
+    limit
+    `
+    )
+    .withWhere({
+      operator: "Equal",
+      path: ["id"],
+      valueText: id,
+    })
+    .do();
+  console.log("RETRIEVED: ", data);
+  return data;
+};
 
 export const deleteWorkflow = async (workflowId, fetchWorkflows) => {
   await client.data
     .deleter()
-    .withClassName('Workflow') // Class of the object to be deleted
+    .withClassName("Workflow") // Class of the object to be deleted
     .withId(workflowId)
-    .do()
-  console.log('DELETED: ', workflowId)
-}
+    .do();
+  console.log("DELETED: ", workflowId);
+};
 
 export const updatePhase = async (phaseId, phase) => {
-  console.log('UPDATING THIS PHASE: ', phaseId)
-  const copyPhase = { ...phase }
+  console.log("UPDATING THIS PHASE: ", phase);
+  const copyPhase = { ...phase };
   //   This will always be huge. Save in localstorage for now?
-  delete copyPhase.inputText
-  delete copyPhase.result
+  delete copyPhase.inputText;
+  delete copyPhase.result;
   const phaseResult = await client.data
     .updater()
-    .withClassName('Phase')
+    .withClassName("Phase")
     .withId(phaseId)
     .withProperties({
       ...copyPhase,
     })
-    .do()
+    .do();
 
-  console.log(JSON.stringify(phaseResult, null, 2))
-}
+  console.log(JSON.stringify(phaseResult, null, 2));
+};
 
 export const createPhase = async (workflowId, phase) => {
-  console.log('SAVING THIS PHASE: ', phase)
-  const copyPhase = { ...phase }
+  console.log("SAVING THIS PHASE: ", phase);
+  const copyPhase = { ...phase };
   //   This will always be huge. Save in localstorage for now?
-  delete copyPhase.inputText
+  delete copyPhase.inputText;
   const phaseResult = await client.data
     .creator()
-    .withClassName('Phase')
+    .withClassName("Phase")
     .withProperties({
       ...copyPhase,
     })
-    .do()
+    .do();
 
-  console.log(JSON.stringify(phaseResult, null, 2))
+  console.log(JSON.stringify(phaseResult, null, 2));
 
   await createRelationship(
-      "Workflow",
-      workflowId,
-      "phases",
-      "Phase",
-      phaseResult.id,
-      "workflow"
-    );
-  return phaseResult.id
-}
+    "Workflow",
+    workflowId,
+    "phases",
+    "Phase",
+    phaseResult.id,
+    "workflow"
+  );
+  return phaseResult.id;
+};
 
 export const createWorkflow = async (newWorkflowTitle) => {
   const result = await client.data
     .creator()
-    .withClassName('Workflow')
+    .withClassName("Workflow")
     .withProperties({
       name: newWorkflowTitle,
     })
-    .do()
+    .do();
 
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify(result, null, 2));
 
   const phaseResult = await client.data
     .creator()
-    .withClassName('Phase')
+    .withClassName("Phase")
     .withProperties({
-      type: 'DATA_SOURCES',
+      type: "DATA_SOURCES",
     })
-    .do()
+    .do();
 
-  console.log(JSON.stringify(phaseResult, null, 2))
+  console.log(JSON.stringify(phaseResult, null, 2));
 
   await client.data
     .referenceCreator()
-    .withClassName('Workflow')
+    .withClassName("Workflow")
     .withId(result.id)
-    .withReferenceProperty('phases')
+    .withReferenceProperty("phases")
     .withReference(
       client.data
         .referencePayloadBuilder()
-        .withClassName('Phase')
+        .withClassName("Phase")
         .withId(phaseResult.id)
-        .payload(),
+        .payload()
     )
-    .do()
-}
+    .do();
+};
 
 export const createOneToMany = async (
   toClass,
@@ -104,75 +193,83 @@ export const createOneToMany = async (
   toID,
   fromIDs,
   toProperty,
-  fromProperty,
+  fromProperty
 ) => {
-  console.log('CREATING ONE TO MANY ', toID)
-  const batcher = await client.batch.referencesBatcher()
+  console.log(
+    "CREATING ONE TO MANY ",
+    toClass,
+    fromClass,
+    toID,
+    fromIDs,
+    toProperty,
+    fromProperty
+  );
+  const batcher = await client.batch.referencesBatcher();
   for (const fromID of fromIDs) {
     batcher.withReference({
       from: `weaviate://localhost/${toClass}/${toID}/${toProperty}`,
       to: `weaviate://localhost/${fromClass}/${fromID}`,
-    })
+    });
     batcher.withReference({
       from: `weaviate://localhost/${fromClass}/${fromID}/${fromProperty}`,
       to: `weaviate://localhost/${toClass}/${toID}`,
-    })
+    });
   }
-  batcher.withConsistencyLevel('ALL')
+  batcher.withConsistencyLevel("ALL");
   try {
     // hmmm so this appears to actually work???
-    const res = await batcher.do()
-    console.log(res)
+    const res = await batcher.do();
+    console.log(res);
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
-  console.log('Created two way relationship for ', toClass, fromClass)
-}
+  console.log("Created two way relationship for ", toClass, fromClass);
+};
 export const batchCreate = async (className, dataObjs) => {
-  let batcher5 = client.batch.objectsBatcher()
+  let batcher5 = client.batch.objectsBatcher();
   for (const dataObj of dataObjs)
     batcher5 = batcher5.withObject({
       class: className,
       properties: dataObj,
-    })
-  console.log('ABOUT TO DO')
+    });
+  console.log("ABOUT TO DO");
   // Flush
-  const res = await batcher5.do()
-  console.log(res)
-  return res
-}
+  const res = await batcher5.do();
+  console.log(res);
+  return res;
+};
 export const createObject = async (className, dataObj) => {
   const res = await client.data
     .creator()
     .withClassName(className)
     .withProperties(dataObj)
-    .do()
-  return res
-}
+    .do();
+  return res;
+};
 export const createRelationship = async (
   fromClass,
   fromID,
   fromProperty,
   toClass,
   toID,
-  toProperty,
+  toProperty
 ) => {
-  console.log('CREATING RELATIONSHIP ', fromID)
-  const batcher = await client.batch.referencesBatcher()
+  console.log("CREATING RELATIONSHIP ", fromID);
+  const batcher = await client.batch.referencesBatcher();
   batcher.withReference({
     from: `weaviate://localhost/${fromClass}/${fromID}/${fromProperty}`,
     to: `weaviate://localhost/${toClass}/${toID}`,
-  })
+  });
   batcher.withReference({
     from: `weaviate://localhost/${toClass}/${toID}/${toProperty}`,
     to: `weaviate://localhost/${fromClass}/${fromID}`,
-  })
-  batcher.withConsistencyLevel('ALL')
+  });
+  batcher.withConsistencyLevel("ALL");
   try {
     // hmmm so this appears to actually work???
-    const res = await batcher.do()
-    console.log(res)
+    const res = await batcher.do();
+    console.log(res);
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
-}
+};

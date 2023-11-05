@@ -1,7 +1,6 @@
 import React from "react";
 
-import { Box, Flex, Icon, Stack, Text } from "@chakra-ui/react";
-import { BsArrowRight } from "react-icons/bs";
+import { Box, Flex, Icon, Text } from "@chakra-ui/react";
 import { GrAddCircle } from "react-icons/gr";
 import CombineWizard from "./phases/CombineWizard";
 import FilterSort from "./phases/FilterSort/FilterSort";
@@ -16,7 +15,6 @@ const PhaseRouter = ({ phase, prevPhaseID, workflowID, updatePhase }) => {
     elements.push(
       <Box>
         <StaticDataSource phaseID={phase._additional.id} />
-
         <Flex p="20px" justify={"center"}>
           <Icon color="black" as={GrAddCircle} h="26px" w="26px" mr="10px" />
           <Text color="black" fontWeight="600" fontSize="18px">
@@ -27,7 +25,13 @@ const PhaseRouter = ({ phase, prevPhaseID, workflowID, updatePhase }) => {
     );
   }
   if (phase.type === "FILTER_SORT") {
-    elements.push(<FilterSort phase={phase} prevPhaseID={prevPhaseID} />);
+    elements.push(
+      <FilterSort
+        phase={phase}
+        prevPhaseID={prevPhaseID}
+        updatePhase={updatePhase}
+      />
+    );
   }
   if (phase.type === "LLM_PROMPT") {
     elements.push(
@@ -45,12 +49,17 @@ const PhaseRouter = ({ phase, prevPhaseID, workflowID, updatePhase }) => {
         phase={phase}
         phaseID={phase._additional.id}
         prevPhaseID={prevPhaseID}
+        updatePhase={updatePhase}
       />
     );
   }
   if (phase.type === "SPLIT") {
     elements.push(
-      <SplitWizard phaseID={phase._additional.id} prevPhaseID={prevPhaseID} />
+      <SplitWizard
+        phaseID={phase._additional.id}
+        prevPhaseID={prevPhaseID}
+        updatePhase={updatePhase}
+      />
     );
   }
   if (phase.type === "REPORT") {
@@ -60,16 +69,10 @@ const PhaseRouter = ({ phase, prevPhaseID, workflowID, updatePhase }) => {
         phaseID={phase._additional.id}
         prevPhaseID={prevPhaseID}
         workflowID={workflowID}
+        updatePhase={updatePhase}
       />
     );
   }
-  elements.push(
-    <Flex w="120px" h="800px" align="center" justify="center">
-      <Stack>
-        <Icon as={BsArrowRight} h="40px" w="120px" />
-      </Stack>
-    </Flex>
-  );
   return elements;
 };
 

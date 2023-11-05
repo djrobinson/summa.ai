@@ -1,7 +1,5 @@
 import { isEmpty } from "lodash";
 
-
-
 const recurseQueryLevels = (
   property,
   types,
@@ -10,7 +8,6 @@ const recurseQueryLevels = (
   filters,
   iteration = 3
 ) => {
-
   if (
     types[parentPath + "." + property] &&
     types[parentPath + "." + property].properties
@@ -47,7 +44,7 @@ valueText: "${valueText}"
 };
 
 const createFilters = (filters, f) => {
-  let filter = ''
+  let filter = "";
   if (filters[f].length > 0) {
     filter += `{
 operator: And,
@@ -67,25 +64,38 @@ operands: [`;
       thisFilter.valueText
     );
   }
-  return filter
-}
+  return filter;
+};
 
 const createSearches = (searches) => {
-  let search = ''
+  let search = "";
   if (searches.nearText) {
     search += `\nnearText: {
 concepts: ["${searches.nearText.concept}"]
 }`;
-}
-return search
-}
+  }
+  return search;
+};
 
 const createSorts = (sorts) => {
   return `[${sorts.map((f) => {
     return `{ path: "${f.path}", order: ${f.order} }`;
-  })}]`;}
+  })}]`;
+};
 
-
+// TECH DEBT: TYPE ARG STRUCTURE MAKES THIS SO CONFUSING! LIMIT IT TO NOTHING BUT INTERMEDIATES.
+// THIS WAS HISTORICALLY BUILT TO HANDLE ANY TYPE OF OBJECT, BUT REALLY JUST NEED IT FOR INTERS!
+// THIS IS WHAT IT EXPECTS:
+// {
+//   Intermediate: {
+//     type: "Intermediate",
+//     properties: ["text", "order", "phase"],
+//   },
+//   "Intermediate.phase": {
+//     type: "Phase",
+//     properties: ["title"],
+//   },
+// }
 export const buildSimpleGraphQLQuery = (
   types,
   filters = {},
@@ -109,25 +119,25 @@ export const buildSimpleGraphQLQuery = (
         query += ` {`;
       } else {
         query += ` (`;
-        if(!isEmpty(filters)) {
-          let filter = createFilters(filters, f)
+        if (!isEmpty(filters)) {
+          let filter = createFilters(filters, f);
           query += `\nwhere: ${filter}`;
         }
-        if(!isEmpty(sorts)) {
-          const sort = createSorts(sorts, f)
+        if (!isEmpty(sorts)) {
+          const sort = createSorts(sorts, f);
           query += `\nsort: ${sort}`;
         }
-        if(!isEmpty(searches)) {
-          query += createSearches(searches, f)
+        if (!isEmpty(searches)) {
+          query += createSearches(searches, f);
         }
         if (limit > 0) {
           query += `\nlimit: ${limit}`;
-        } 
+        }
         query += `\n) {
 _additional {
   id
-}`
-}
+}`;
+      }
       types[f].properties.forEach((p) => {
         query = recurseQueryLevels(p, types, f, query, filters);
       });

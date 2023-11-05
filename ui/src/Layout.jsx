@@ -7,6 +7,7 @@ import {
   CloseButton,
   Flex,
   HStack,
+  Heading,
   Icon,
   IconButton,
   Menu,
@@ -14,6 +15,7 @@ import {
   MenuDivider,
   MenuItem,
   MenuList,
+  Stack,
   Text,
   VStack,
   useColorModeValue,
@@ -21,12 +23,22 @@ import {
 } from "@chakra-ui/react";
 import { Link, Outlet } from "react-router-dom";
 
+import { FaPlay, FaRegSave, FaStop } from "react-icons/fa";
+import { FiRefreshCcw } from "react-icons/fi";
+
+import React from "react";
 import { FiChevronDown, FiMenu } from "react-icons/fi";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import Alerts from "./Alerts";
+import BatchButton from "./BatchButton";
+import BatchManager from "./RequestManager/BatchManager";
 import RequestManager from "./RequestManager/RequestManager";
 import RequestsButton from "./RequestsButton";
-import { showRequestManagerState } from "./recoil/atoms";
+import {
+  globalWorkflowNameState,
+  showRequestManagerState,
+} from "./recoil/atoms";
+import { showBatchManagerState } from "./recoil/batchState";
 
 const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
   return (
@@ -111,6 +123,7 @@ const NavItem = ({ icon, children, ...rest }) => {
 };
 
 const MobileNav = ({ onOpen, hideOptions }) => {
+  const workflowName = useRecoilValue(globalWorkflowNameState);
   const [showRequests, setShowRequests] = useRecoilState(
     showRequestManagerState
   );
@@ -123,7 +136,7 @@ const MobileNav = ({ onOpen, hideOptions }) => {
       bg={useColorModeValue("white", "gray.900")}
       borderBottomWidth="1px"
       borderBottomColor={useColorModeValue("gray.200", "gray.700")}
-      justifyContent={{ base: "space-between" }}
+      justifyContent={{ base: "space-around" }}
     >
       <Text fontSize="3xl" justifySelf={"flex-start"}>
         <Link to="/">
@@ -151,9 +164,40 @@ const MobileNav = ({ onOpen, hideOptions }) => {
       >
         Summa.ai
       </Text>
+      <Stack>
+        <Text fontWeight="800" fontSize="10px">
+          Workflow Name
+        </Text>
+        <Heading size="md" fontWeight="300" color="teal.600">
+          {workflowName}
+        </Heading>
+      </Stack>
+
+      <Stack>
+        <Text fontWeight="800" fontSize="10px">
+          Workflow Controls
+        </Text>
+        <Box>
+          <Icon mr="15px" color="teal.400" as={FaPlay} w={5} h={5} />
+          <Icon mr="15px" color="maroon" as={FaStop} w={5} h={5} />
+          <Icon mr="15px" color="teal.700" as={FiRefreshCcw} w={5} h={5} />
+          <Icon color="teal.700" as={FaRegSave} w={5} h={5} />
+        </Box>
+      </Stack>
 
       <HStack spacing={{ base: "0", md: "6" }}>
-        <RequestsButton />
+        <HStack
+          h="full"
+          borderRight="solid 1px lightgray"
+          borderLeft="solid 1px lightgray"
+          pr="20px"
+          pl="20px"
+        >
+          <BatchButton />
+        </HStack>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <RequestsButton />
+        </React.Suspense>
         <Flex alignItems={"center"}>
           <Menu>
             <MenuButton
@@ -220,18 +264,24 @@ const Layout = ({ hideOptions = true }) => {
   const [showRequests, setShowRequests] = useRecoilState(
     showRequestManagerState
   );
+  const [showBatches, setShowBatches] = useRecoilState(showBatchManagerState);
 
   return (
     <Box minH="100vh" bg={useColorModeValue("gray.100", "gray.900")}>
       <MobileNav onOpen={onOpen} hideOptions={hideOptions} />
       <Box pos="relative" p="4">
-        <Alerts w={showRequests ? "calc(98% - 400px)" : "98%"} zIndex={5} />
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <Alerts
+            w={showRequests || showBatches ? "calc(98% - 400px)" : "98%"}
+            zIndex={5}
+          />
+        </React.Suspense>
         <Outlet />
         <Box
           p="20px"
           w="500px"
           style={{
-            display: showRequests ? "block" : "none",
+            display: showRequests || showBatches ? "block" : "none",
             position: "absolute",
             right: 0,
             top: 0,
@@ -240,12 +290,14 @@ const Layout = ({ hideOptions = true }) => {
             borderLeft: "solid 1px lightgray",
           }}
         >
-          <RequestManager />
+          {showBatches && <BatchManager />}
+          {showRequests && <RequestManager />}
           <Button
             variant="outline"
             mr={3}
             onClick={() => {
               setShowRequests(false);
+              setShowBatches(false);
             }}
           >
             Exit

@@ -1,15 +1,11 @@
 import React from "react";
 
-import { motion, useMotionValue, useTransform } from "framer-motion";
-
-import { useLazyQuery, gql, useQuery } from "@apollo/client";
+import { gql, useLazyQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
-import Checkmark from "../components/Checkmark";
 import { useParams } from "react-router-dom";
-import DataSourceSelector from "./phases/DataSourceSelector";
-import Phases from "./Phases";
 import { useRecoilState } from "recoil";
-import { showRequestManagerState } from "../recoil/atoms";
+import { globalWorkflowNameState } from "../recoil/atoms";
+import Phases from "./Phases";
 
 export const FETCH_WORKFLOW = gql`
   query GetWorkflow($id: String!) {
@@ -35,6 +31,9 @@ export const FETCH_WORKFLOW = gql`
 `;
 const Workflow = ({}) => {
   const { id } = useParams();
+  const [globalWorkflowName, setGlobalWorkflowName] = useRecoilState(
+    globalWorkflowNameState
+  );
 
   const [fetchWorkflows, { data, error, loading }] = useLazyQuery(
     FETCH_WORKFLOW,
@@ -45,10 +44,14 @@ const Workflow = ({}) => {
   React.useEffect(() => {
     fetchWorkflows();
   }, []);
+
   console.log("Workflow: ", data, error, loading);
   // If phases, then render them
   // if not, show DataSourceSelector
   const workflow = !isEmpty(data) ? data.Get.Workflow[0] : {};
+  React.useEffect(() => {
+    setGlobalWorkflowName(workflow.name);
+  }, [workflow, setGlobalWorkflowName]);
   const phases =
     !isEmpty(data) && !isEmpty(data.Get.Workflow[0].phases)
       ? data.Get.Workflow[0].phases

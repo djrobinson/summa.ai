@@ -13,7 +13,11 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 
+import { isEmpty } from "lodash";
 import "reactflow/dist/style.css";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { requestPhasesState } from "../recoil/atoms";
+import { batchState, batchesState } from "../recoil/batchState";
 import Checkmark from "./Checkmark";
 import CategorizeNode from "./flows/CategorizeNode";
 import CombineNode from "./flows/CombineNode";
@@ -62,6 +66,7 @@ const Options = (props) => {
             rounded={"full"}
             flex={"1 0 auto"}
             onClick={() => {
+              console.log("What is input? ", data);
               data.addPhase({
                 type: "FILTER_SORT",
                 workflow_step: data.workflow_step,
@@ -177,13 +182,18 @@ const NODE_TYPES = {
 
 const Node = (n) => {
   const { data } = n;
+  console.log("AY ", data);
+  const [batches, setBatches] = useRecoilState(batchesState);
+  const [requestPhases, setRequestPhasesState] =
+    useRecoilState(requestPhasesState);
+  const [nodeBatch, setNodeBatch] = React.useState(null);
+  const latestBatch = useRecoilValue(batchState(nodeBatch));
+  const intermediates = latestBatch.intermediates || data.intermediates;
   const Component = NODE_TYPES[data.type];
   return (
     <>
       <Box
-        border={
-          data.runState === "RUNNABLE" ? "solid 2px green" : "solid 1px gray"
-        }
+        border={!isEmpty(intermediates) ? "solid 3px green" : "solid 1px gray"}
         bg="white"
         p="10px"
         align="center"
@@ -218,6 +228,28 @@ const Node = (n) => {
             size="sm"
             bg="white"
             icon={<Icon zIndex={6} color="teal.400" as={FaPlay} w={5} h={5} />}
+            onClick={async () => {
+              console.log("MAGIC HAPPENING", data, batches);
+              setNodeBatch(`${data._additional.id}-${batches.length + 1}`);
+
+              if (data.type !== "LLM_PROMPT") {
+                setBatches((old) => [
+                  ...old,
+                  {
+                    type: data.type,
+                    phaseID: data._additional.id,
+                    id: `${data._additional.id}-${old.length + 1}`,
+                    status: "PENDING",
+                  },
+                ]);
+              } else {
+                // TECH DEBT: GETTING HACKY SINCE I'LL NEED TO REWORK THIS
+                // STATE STUFF ANYWAY. JUST CONCATTING CURR PHASE ID & SOURCE
+                const requestPhaseID =
+                  data.source_id + "||" + data._additional.id;
+                setRequestPhasesState((old) => [...old, requestPhaseID]);
+              }
+            }}
           />
           <IconButton
             size="sm"
@@ -233,6 +265,12 @@ const Node = (n) => {
             icon={<Icon zIndex={6} color="red.600" as={FaTrash} w={5} h={5} />}
           />
         </Flex>
+        {data.type !== "DATA_SOURCE" && (
+          <Text>
+            {!isEmpty(intermediates) ? intermediates.length.toString() : "0"}{" "}
+            Output Records
+          </Text>
+        )}
 
         <Handle
           type="target"
@@ -309,7 +347,7 @@ export default function Flow({ nodes = [], edges = [] }) {
   return (
     <Box
       bg="white"
-      style={{ width: "calc(100vw)", height: "calc(100vh - 160px)" }}
+      style={{ width: "calc(100vw)", height: "calc(100vh - 110px)" }}
     >
       <ReactFlow
         nodes={renderNodes}

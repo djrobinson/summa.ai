@@ -1,24 +1,32 @@
-import { atom, atomFamily, selectorFamily, selector } from "recoil";
-import { getTokenCount } from "../utils/tokenHelpers";
+import { isEmpty } from "lodash";
+import { atom, atomFamily, selector, selectorFamily } from "recoil";
 import { getUnixNow } from "../utils/timeUtils";
-import { createObject, createRelationship } from "../utils/weaviateServices";
+import {
+  createObject,
+  createRelationship,
+  getIntermediatesForPhase,
+  getPhase,
+} from "../utils/weaviateServices";
 
 export const apiKeyState = atom({
-  key: 'apiKeyState', 
-  default: '',
+  key: "apiKeyState",
+  default: "",
 });
 
-
+export const globalWorkflowNameState = atom({
+  key: "globalWorkflowName",
+  default: null,
+});
 
 export const showRequestManagerState = atom({
-  key: 'showRequestManagerState', 
+  key: "showRequestManagerState",
   default: false,
 });
 
 export const runningTokenCountState = atom({
-  key: 'runningTokenCountState',
-  default: 0
-})
+  key: "runningTokenCountState",
+  default: 0,
+});
 
 const introspect = async (prompt, phaseID, sourceContextID) => {
   try {
@@ -39,7 +47,7 @@ const introspect = async (prompt, phaseID, sourceContextID) => {
   } catch (e) {
     console.error("COULD NOT SEARCH: ", e);
   }
-}
+};
 
 const runPromptForReport = async (prompt, workflowID, phaseID) => {
   try {
@@ -63,9 +71,9 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
     // TODO: ALL OF THIS MOVES TO LAMBDA
     const objRes = await createObject("Report", {
       title: prompt.reportTitle,
-      text: res.sentences.join('\n\n'),
+      text: res.sentences.join("\n\n"),
     });
-    console.log('CREATED REPORT: ', workflowID, phaseID, objRes)
+    console.log("CREATED REPORT: ", workflowID, phaseID, objRes);
     await createRelationship(
       "Phase",
       phaseID,
@@ -85,11 +93,11 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
     );
 
     console.log("created rel for AI result");
-    return { res: res.sentences.join('\n\n'), reportID: objRes.id };
+    return { res: res.sentences.join("\n\n"), reportID: objRes.id };
   } catch (e) {
     console.error("COULD NOT SEARCH: ", e);
   }
-}
+};
 
 const runPrompt = async (prompt, phaseID, sourceContextID) => {
   try {
@@ -145,117 +153,219 @@ const runPrompt = async (prompt, phaseID, sourceContextID) => {
 //   prompt: 'This is a message',
 //   id: '1',
 // }
-export const requestsState = atom({
-  key: 'requestsState', 
+export const requestPhasesState = atom({
+  key: "requestPhasesState",
   default: [],
 });
 
+// TECH DEBT TODO: THE SHAPE OF REQUESTS VS REQUEST & THE TYPES RETURNED IS CONFUSING!
+// NEED TO FIGURE OUT HOW TO GET A CONSISTENT SHAPE THAT MAKES SENSE
+const phaseQuery = selectorFamily({
+  key: "phaseQuery",
+  get: (phaseID) => async () => {
+    // TECH DEBT: A BIT OF HACKINESS COUPLED TO Flow.jsx NOTE
+    const splitIDs = phaseID.split("||");
+    const prevID = splitIDs[0];
+    const currID = splitIDs[1];
+    const currPhase = await getPhase(currID);
+    const currPrompt = currPhase.data.Get.Phase[0].prompt;
+    const response = await getIntermediatesForPhase("Phase", prevID);
+    console.log("phaseQuery ", currPhase);
+    if (!isEmpty(response.data.Get.Phase[0])) {
+      // id: 'REPORT-3',
+      // type: 'REPORT',
+      // prompt: summarizingPrompt,
+      // context: context,
+      const requestPrompts = response.data.Get.Phase[0].intermediates.map(
+        (int) => {
+          return {
+            ...int,
+
+            prompt: currPrompt,
+          };
+        }
+      );
+      return requestPrompts;
+    }
+    return [];
+  },
+});
+
+export const requestsState = selector({
+  key: "requestsState",
+  get: ({ get }) => {
+    const phaseList = get(requestPhasesState);
+    const intermediatesWithPrompts = phaseList.map((phaseID) => {
+      const res = get(phaseQuery(phaseID));
+      return res;
+    });
+    if (isEmpty(intermediatesWithPrompts)) return [];
+    console.log("intermediatesWithPrompts ", intermediatesWithPrompts[0]);
+    return intermediatesWithPrompts[0].map((int) => ({
+      id: `PROMPT-${int._additional.id}`,
+      type: "LLM_PROMPT",
+      prompt: int.prompt,
+      context: int.text,
+    }));
+  },
+});
+
 export const pendingRequestsState = selector({
-  key: 'pendingRequestsState',
-  get: ({get}) => {
+  key: "pendingRequestsState",
+  get: ({ get }) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'PENDING').map(r =>  get(requestState(r.id)))
+    return requests
+      .filter((r) => get(requestState(r.id)).status === "PENDING")
+      .map((r) => get(requestState(r.id)));
   },
   default: [],
 });
 
 export const runningRequestsState = selector({
-  key: 'runningRequestsState',
-  get: ({get}) => {
+  key: "runningRequestsState",
+  get: ({ get }) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'RUNNING').map(r =>  get(requestState(r.id)))
+    return requests
+      .filter((r) => get(requestState(r.id)).status === "RUNNING")
+      .map((r) => get(requestState(r.id)));
   },
   default: [],
 });
 
 export const doneRequestsState = selector({
-  key: 'doneRequestsState',
-  get: ({get}) => {
+  key: "doneRequestsState",
+  get: ({ get }) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'DONE').map(r =>  get(requestState(r.id)))
+    return requests
+      .filter((r) => get(requestState(r.id)).status === "DONE")
+      .map((r) => get(requestState(r.id)));
   },
   default: [],
 });
 
 export const erroredRequestsState = selector({
-  key: 'erroredRequestsState',
-  get: ({get}) => {
+  key: "erroredRequestsState",
+  get: ({ get }) => {
     const requests = get(requestsState);
-    return requests.filter(r => get(requestState(r.id)).status === 'ERROR').map(r =>  get(requestState(r.id)))
+    return requests
+      .filter((r) => get(requestState(r.id)).status === "ERROR")
+      .map((r) => get(requestState(r.id)));
   },
   default: [],
 });
 
 export const allRequestStatuses = selector({
-  key: 'allRequestStatuses',
-  get: ({get}) => {
+  key: "allRequestStatuses",
+  get: ({ get }) => {
     const requests = get(requestsState);
-    const all = requests.map(r => get(requestState(r.id)))
-    return all
+    const all = requests.map((r) => get(requestState(r.id)));
+    return all;
   },
-  default: []
-})
-
+  default: [],
+});
 
 export const rateLimitState = atom({
-  key: 'rateLimitState',
+  key: "rateLimitState",
   default: 10000,
-})
-
+});
 
 // Requeststate will copy all requestsState, adding in PENDING for new requests
 // This will actually run the prompt and update the status to DONE/ERROR
 export const requestState = atomFamily({
-  key: 'requestState', 
+  key: "requestState",
   default: selectorFamily({
-    key: 'requestStateDefault',
-    get: (requestId) => ({ get }) => {
-      console.log("Running in requestStateDefault in atom!!!")
-      const requests = get(requestsState)
-      const request = requests.find(r => r.id === requestId);
-      if (!request) {
-        return {};
-      }
-      return { id: request.id, status: 'PENDING', prompt: request.prompt, context: request.context, phaseID: request.phaseID, workflowID: request.workflowID, sourceContextID: request.id, type: request.type, result: null, start: null, end: null, reportTitle: null };
-    },
+    key: "requestStateDefault",
+    get:
+      (requestId) =>
+      ({ get }) => {
+        console.log("Running in requestStateDefault in atom!!!");
+        const requests = get(requestsState);
+        const request = requests.find((r) => r.id === requestId);
+        if (!request) {
+          return {};
+        }
+        return {
+          id: request.id,
+          status: "PENDING",
+          prompt: request.prompt,
+          context: request.context,
+          phaseID: request.phaseID,
+          workflowID: request.workflowID,
+          sourceContextID: request.id,
+          type: request.type,
+          result: null,
+          start: null,
+          end: null,
+          reportTitle: null,
+        };
+      },
   }),
   effects: (requestId) => [
     ({ setSelf, onSet }) => {
       onSet((newValue, oldValue) => {
-        if (newValue.status === 'RUNNING' && oldValue.status !== 'RUNNING') {
-          console.log('WE GOING!', newValue.type)
+        if (newValue.status === "RUNNING" && oldValue.status !== "RUNNING") {
+          console.log("WE GOING!", newValue.type);
           const go = async () => {
             try {
-              if (newValue.type === 'REPORT') {
-                const { reportID, res } = await runPromptForReport(newValue.prompt + ' ' + newValue.context, newValue.workflowID, newValue.phaseID);
+              if (newValue.type === "REPORT") {
+                const { reportID, res } = await runPromptForReport(
+                  newValue.prompt + " " + newValue.context,
+                  newValue.workflowID,
+                  newValue.phaseID
+                );
                 console.log("RES: ", res);
-                setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res, reportID}));
-                return
+                setSelf((prevR) => ({
+                  ...prevR,
+                  status: "DONE",
+                  end: getUnixNow(),
+                  result: res,
+                  reportID,
+                }));
+                return;
               }
-              if (newValue.type === 'INTROSPECT') {
-                const { reportID, res } = await introspect(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
+              if (newValue.type === "INTROSPECT") {
+                const { reportID, res } = await introspect(
+                  newValue.prompt + " " + newValue.context,
+                  newValue.phaseID,
+                  newValue.sourceContextID
+                );
                 console.log("RES: ", res);
-                setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res, reportID}));
-                return
+                setSelf((prevR) => ({
+                  ...prevR,
+                  status: "DONE",
+                  end: getUnixNow(),
+                  result: res,
+                  reportID,
+                }));
+                return;
               }
-              const res = await runPrompt(newValue.prompt + ' ' + newValue.context, newValue.phaseID, newValue.sourceContextID);
+              const res = await runPrompt(
+                newValue.prompt + " " + newValue.context,
+                newValue.phaseID,
+                newValue.sourceContextID
+              );
               console.log("RES: ", res);
-              setSelf(prevR => ({...prevR, status: 'DONE', end: getUnixNow(), result: res}));
+              setSelf((prevR) => ({
+                ...prevR,
+                status: "DONE",
+                end: getUnixNow(),
+                result: res,
+              }));
             } catch (e) {
               console.log("DIDNT WORK: ", e);
             }
           };
           go();
         }
-      })
-    }
+      });
+    },
   ],
 });
 
-
 const clockEffect =
-  (interval) => ({setSelf, trigger}) => {
-    if (trigger === 'get') {
+  (interval) =>
+  ({ setSelf, trigger }) => {
+    if (trigger === "get") {
       setSelf(getUnixNow());
     }
     const timer = setInterval(() => setSelf(getUnixNow()), interval);
@@ -267,93 +377,93 @@ const clockEffect =
  * Updates at the provided interval
  */
 export const clockState = atomFamily({
-  key: 'clockState',
+  key: "clockState",
   default: getUnixNow(),
   effects: (interval) => [clockEffect(interval)],
 });
 
-
-
 export const alertsState = selector({
-  key: 'alertsState ',
-  get: ({get}) => {
+  key: "alertsState ",
+  get: ({ get }) => {
     const requests = get(requestsState);
-    let allAlerts = []
+    let allAlerts = [];
     // Note, RUNNING is for testing only. Alerts should only apply to done or err
     const clearedAlerts = get(clearedAlertsState);
     for (const request of requests) {
       const r = get(requestState(request.id));
-      if (r.status === 'RUNNING') {
+      if (r.status === "RUNNING") {
         allAlerts.push({
           title: `Request ${r.id} is running`,
-          message: 'This is a message',
-          type: 'info',
+          message: "This is a message",
+          type: "info",
           id: request.id,
-        })
+        });
       }
-      if (r.status === 'DONE' && clearedAlerts.indexOf(request.id) === -1) {
+      if (r.status === "DONE" && clearedAlerts.indexOf(request.id) === -1) {
         const r = get(requestState(request.id));
-        const removedAlerts = allAlerts.filter(a => a.id !== request.id)
+        const removedAlerts = allAlerts.filter((a) => a.id !== request.id);
         removedAlerts.push({
           title: `Request ${r.id} is done`,
-          message: 'This is a message',
-          type: 'success',
+          message: "This is a message",
+          type: "success",
           id: request.id,
-        })
-        allAlerts = removedAlerts
+        });
+        allAlerts = removedAlerts;
       }
     }
-    return allAlerts
+    return allAlerts;
   },
   default: [],
 });
 
 export const clearedAlertsState = atom({
-  key: 'clearedAlertsState', 
+  key: "clearedAlertsState",
   default: [],
 });
 
 export const enhanceRequestsState = atom({
-  key: 'enhanceRequestsState', 
-  default: {}
-})
+  key: "enhanceRequestsState",
+  default: {},
+});
 
 export const enhanceRequestState = selector({
-  key: 'enhanceRequestResultsState',
+  key: "enhanceRequestResultsState",
   default: null,
-  get: ({get}) => {
+  get: ({ get }) => {
     const enhanceRequests = get(enhanceRequestsState);
     if (!enhanceRequests) {
-      return null
+      return null;
     }
-    return enhanceRequests
-  }
-})
+    return enhanceRequests;
+  },
+});
 
 export const enhanceRequestResultsState = selectorFamily({
-  key: 'enhanceRequestResultsState',
-  get: (sentenceHash) => ({get}) => {
-    const enhanceRequests = get(enhanceRequestsState);
-    if (!enhanceRequests) {
-      return null
-    }
-    const enhanceRequestIDs = enhanceRequests[sentenceHash]
-    if (!enhanceRequestIDs) {
-      return null
-    }
-    const results = enhanceRequestIDs.reduce((acc, id) => {
-      const res = get(requestState(id)).result
-      if (!res) {
+  key: "enhanceRequestResultsState",
+  get:
+    (sentenceHash) =>
+    ({ get }) => {
+      const enhanceRequests = get(enhanceRequestsState);
+      if (!enhanceRequests) {
+        return null;
+      }
+      const enhanceRequestIDs = enhanceRequests[sentenceHash];
+      if (!enhanceRequestIDs) {
+        return null;
+      }
+      const results = enhanceRequestIDs.reduce((acc, id) => {
+        const res = get(requestState(id)).result;
+        if (!res) {
+          return {
+            ...acc,
+            [id]: null,
+          };
+        }
         return {
           ...acc,
-          [id]: null
-        }
-      }
-      return {
-        ...acc,
-        [id]: JSON.parse(res)
-      }
-    }, {})
-    return results
-  },
+          [id]: JSON.parse(res),
+        };
+      }, {});
+      return results;
+    },
 });

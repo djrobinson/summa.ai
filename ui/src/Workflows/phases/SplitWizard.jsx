@@ -1,30 +1,26 @@
-import React from "react";
-import { FaPlay, FaRegSave } from "react-icons/fa";
-import { FiRefreshCcw } from "react-icons/fi";
 import {
   Box,
   Button,
-  Heading,
-  Text,
   Flex,
-  Icon,
-  Stack,
-  useColorModeValue,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
   FormLabel,
+  Heading,
+  NumberDecrementStepper,
+  NumberIncrementStepper,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
-  RadioGroup,
   Radio,
+  RadioGroup,
+  Stack,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  Text,
 } from "@chakra-ui/react";
 import axios from "axios";
+import React from "react";
 import { batchCreate, createOneToMany } from "../../utils/weaviateServices";
 
 const SplitStrategy = ({ setSentenceCount, setSplitChar, splitChar }) => {
@@ -64,11 +60,12 @@ const SplitStrategy = ({ setSentenceCount, setSplitChar, splitChar }) => {
   );
 };
 
+// MOVE TO ATOMS.JS
 const createBatch = async (splitSections, phaseID) => {
   const intermediates = splitSections.map((s, i) => {
     return {
       text: s,
-      order: i + 1
+      order: i + 1,
     };
   });
   const batches = [];
@@ -92,31 +89,31 @@ const createBatch = async (splitSections, phaseID) => {
   }
 };
 
-const SplitWizard = ({ prevPhaseID, phaseID }) => {
+const SplitWizard = ({ prevPhaseID, phaseID, updatePhase }) => {
   const [inputText, setInputText] = React.useState("");
   const [splitSections, setSplitSections] = React.useState([]);
   const [sentenceCount, setSentenceCount] = React.useState(10);
   const [splitChar, setSplitChar] = React.useState(" ");
   React.useEffect(() => {
     const go = async () => {
-        const res = await axios.post(
-            "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/readfile",
-            {
-                identifier: prevPhaseID,
-            },
-            {
-            headers: {
-                "Content-Type": "text/plain",
-            },
-            }
-        );
-        // update the data source with the s3 url
-        // set phase to Splitter
-        console.log("INIT SPLITFILE READ", res.data);
-        setInputText(res.data.data)
-    }
-    go()
-},[])
+      const res = await axios.post(
+        "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/readfile",
+        {
+          identifier: prevPhaseID,
+        },
+        {
+          headers: {
+            "Content-Type": "text/plain",
+          },
+        }
+      );
+      // update the data source with the s3 url
+      // set phase to Splitter
+      console.log("INIT SPLITFILE READ", res.data);
+      setInputText(res.data.data);
+    };
+    go();
+  }, []);
   const runSplitSample = React.useCallback(() => {
     const splitText = inputText.split(splitChar);
     const grouped = [];
@@ -141,9 +138,7 @@ const SplitWizard = ({ prevPhaseID, phaseID }) => {
   }, [inputText, sentenceCount, splitChar, runSplitSample]);
 
   return (
-    <Box
-      w="600px"
-    >
+    <Box w="600px">
       <SplitStrategy
         setSplitChar={setSplitChar}
         splitChar={splitChar}
@@ -190,10 +185,11 @@ const SplitWizard = ({ prevPhaseID, phaseID }) => {
           rounded={"full"}
           flex={"1 0 auto"}
           onClick={() => {
-            createBatch(splitSections, phaseID)
+            // createBatch(splitSections, phaseID);
+            // update Phase, wait til atoms.js to do more
           }}
         >
-          Split Document
+          Save Split Configurations
         </Button>
       </Flex>
     </Box>

@@ -308,6 +308,7 @@ const WorkflowBuilder = () => {
                   name: newWorkflowTitle,
                 });
                 console.log("NEW WF: ", `/workflows/${wf.id}`);
+
                 navigate(`/workflows/${wf.id}`);
               }}
               colorScheme="teal"
