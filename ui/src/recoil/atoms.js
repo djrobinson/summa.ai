@@ -28,7 +28,7 @@ export const runningTokenCountState = atom({
   default: 0,
 });
 
-const introspect = async (prompt, phaseID, sourceContextID) => {
+const introspect = async (prompt, phaseID) => {
   try {
     const requestOptions = {
       method: "POST",
@@ -99,7 +99,9 @@ const runPromptForReport = async (prompt, workflowID, phaseID) => {
   }
 };
 
-const runPrompt = async (prompt, phaseID, sourceContextID) => {
+// TODO: FOLLOW handleFilterSortPhase'S EXAMPLE OF HOW TO SET INTERMEDIATES
+// THEN HANDLE SET SELF WITH INTS
+const runPrompt = async (prompt, phaseID) => {
   try {
     const requestOptions = {
       method: "POST",
@@ -128,17 +130,8 @@ const runPrompt = async (prompt, phaseID, sourceContextID) => {
       objRes.id,
       "phase"
     );
-    if (sourceContextID) {
-      await createRelationship(
-        "Intermediate",
-        sourceContextID,
-        "sourceFor",
-        "Intermediate",
-        objRes.id,
-        "source"
-      );
-    }
-    console.log("created rel for AI result");
+    // 2d3fdbb6-de83-4d40-b50a-2d74c9a96e26
+    console.log("created rel for AI result", phaseID, objRes.id);
     return res.choices[0].message.content;
   } catch (e) {
     console.error("COULD NOT SEARCH: ", e);
@@ -180,7 +173,7 @@ const phaseQuery = selectorFamily({
         (int) => {
           return {
             ...int,
-
+            phaseID: currID,
             prompt: currPrompt,
           };
         }
@@ -206,6 +199,8 @@ export const requestsState = selector({
       type: "LLM_PROMPT",
       prompt: int.prompt,
       context: int.text,
+      // note: this is restructured phaseID, not the || concat one
+      phaseID: int.phaseID,
     }));
   },
 });
@@ -291,7 +286,6 @@ export const requestState = atomFamily({
           context: request.context,
           phaseID: request.phaseID,
           workflowID: request.workflowID,
-          sourceContextID: request.id,
           type: request.type,
           result: null,
           start: null,
@@ -304,7 +298,7 @@ export const requestState = atomFamily({
     ({ setSelf, onSet }) => {
       onSet((newValue, oldValue) => {
         if (newValue.status === "RUNNING" && oldValue.status !== "RUNNING") {
-          console.log("WE GOING!", newValue.type);
+          console.log("WE GOING!", newValue);
           const go = async () => {
             try {
               if (newValue.type === "REPORT") {
@@ -326,8 +320,7 @@ export const requestState = atomFamily({
               if (newValue.type === "INTROSPECT") {
                 const { reportID, res } = await introspect(
                   newValue.prompt + " " + newValue.context,
-                  newValue.phaseID,
-                  newValue.sourceContextID
+                  newValue.phaseID
                 );
                 console.log("RES: ", res);
                 setSelf((prevR) => ({
@@ -339,10 +332,10 @@ export const requestState = atomFamily({
                 }));
                 return;
               }
+              // TECH DEBT: THIS CONCAT IS TOO DEEP IN THE LOGIC
               const res = await runPrompt(
                 newValue.prompt + " " + newValue.context,
-                newValue.phaseID,
-                newValue.sourceContextID
+                newValue.phaseID
               );
               console.log("RES: ", res);
               setSelf((prevR) => ({

@@ -21,7 +21,6 @@ import {
 } from "@chakra-ui/react";
 import axios from "axios";
 import React from "react";
-import { batchCreate, createOneToMany } from "../../utils/weaviateServices";
 
 const SplitStrategy = ({ setSentenceCount, setSplitChar, splitChar }) => {
   return (
@@ -60,36 +59,7 @@ const SplitStrategy = ({ setSentenceCount, setSplitChar, splitChar }) => {
   );
 };
 
-// MOVE TO ATOMS.JS
-const createBatch = async (splitSections, phaseID) => {
-  const intermediates = splitSections.map((s, i) => {
-    return {
-      text: s,
-      order: i + 1,
-    };
-  });
-  const batches = [];
-  for (let i = 0; i < intermediates.length; i += 100) {
-    batches.push(intermediates.slice(i, i + 100));
-  }
-
-  console.log("INTERMEDIATES: ", intermediates);
-  for (let i = 0; i < batches.length; i++) {
-    const res = await batchCreate("Intermediate", batches[i]);
-    console.log("RES: ", i, res);
-    const intermediateIDs = res.map((r) => r.id);
-    await createOneToMany(
-      "Phase",
-      "Intermediate",
-      phaseID,
-      intermediateIDs,
-      "intermediates",
-      "dataSource"
-    );
-  }
-};
-
-const SplitWizard = ({ prevPhaseID, phaseID, updatePhase }) => {
+const SplitWizard = ({ phase, prevPhaseID, phaseID, updatePhase }) => {
   const [inputText, setInputText] = React.useState("");
   const [splitSections, setSplitSections] = React.useState([]);
   const [sentenceCount, setSentenceCount] = React.useState(10);
@@ -185,8 +155,12 @@ const SplitWizard = ({ prevPhaseID, phaseID, updatePhase }) => {
           rounded={"full"}
           flex={"1 0 auto"}
           onClick={() => {
-            // createBatch(splitSections, phaseID);
-            // update Phase, wait til atoms.js to do more
+            const updatedPhase = {
+              ...phase,
+              splitChar,
+              groupCount: sentenceCount,
+            };
+            updatePhase(phase._additional.id, updatedPhase);
           }}
         >
           Save Split Configurations

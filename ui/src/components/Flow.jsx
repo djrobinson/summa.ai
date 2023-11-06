@@ -183,6 +183,11 @@ const NODE_TYPES = {
 const Node = (n) => {
   const { data } = n;
   console.log("AY ", data);
+  // TODO: CHECK BATCHES AND REQUESTS TO SEE IF EVERYTHING IS DONE.
+  // IF PROGRESS - BLUE
+  // IF PENDINGS ONLY - YELLOW (PAUSED)
+  // IF ALL DONE - GREEN
+  // IF NEITHER, BUT HAS INTS (PRELOAD CASE) - GREEN
   const [batches, setBatches] = useRecoilState(batchesState);
   const [requestPhases, setRequestPhasesState] =
     useRecoilState(requestPhasesState);
