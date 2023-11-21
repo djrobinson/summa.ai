@@ -1,21 +1,20 @@
 import React from "react";
 
+import { gql, useQuery } from "@apollo/client";
 import {
-  Wrap,
-  Flex,
   Box,
-  Heading,
-  Text,
-  useColorModeValue,
   Button,
-  Input,
+  Flex,
   FormLabel,
+  Heading,
+  Input,
+  Text,
+  Wrap,
+  useColorModeValue,
 } from "@chakra-ui/react";
-import { useLazyQuery, gql, useQuery } from "@apollo/client";
 import { isEmpty } from "lodash";
-import { createObject } from "../utils/weaviateServices";
-import ConfigureDataSource from "./ConfigureDataSource";
 import { useNavigate } from "react-router-dom";
+import { createObject } from "../utils/weaviateServices";
 
 const FETCH_DATA_SOURCE = gql`
   {
@@ -31,7 +30,7 @@ const FETCH_DATA_SOURCE = gql`
 `;
 
 const DataSourcesHome = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const { data, error, loading } = useQuery(FETCH_DATA_SOURCE);
   console.log("Data Sources: ", data, error, loading);
   const [newSourceTitle, setNewSourceTitle] = React.useState("");

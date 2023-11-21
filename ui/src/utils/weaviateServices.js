@@ -4,7 +4,7 @@ const client = weaviate.client({
   scheme: "http",
   host: "localhost:8080", // Replace with your endpoint
   headers: {
-    "X-Openai-Api-Key": "***REMOVED***",
+    "X-Openai-Api-Key": localStorage.getItem("OPENAI_API_KEY"),
   },
 });
 

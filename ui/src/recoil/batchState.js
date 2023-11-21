@@ -2,9 +2,12 @@ import axios from "axios";
 import { atom, atomFamily, selector, selectorFamily } from "recoil";
 import { buildSimpleGraphQLQuery } from "../utils/graphqlBuilder";
 import { getUnixNow } from "../utils/timeUtils";
+import { getTokenCount, isValidLength } from "../utils/tokenHelpers";
 import {
   batchCreate,
+  createObject,
   createOneToMany,
+  createRelationship,
   getBatchByID,
 } from "../utils/weaviateServices";
 
@@ -153,40 +156,48 @@ export const batchState = atomFamily({
 });
 
 const handleCombinePhase = async (phaseData, phaseID) => {
+  const intermediates = phaseData.intermediates;
+  const joinChar = phaseData.joinCharacter;
+  const joinedText = intermediates.reduce((acc, int) => {
+    if (acc === "") return int.text;
+    const yo = joinChar.replaceAll("\\n", "\n");
+    console.log("YO ", yo);
+    return acc + yo + int.text;
+  }, "");
   console.log("handle Combine Split Request");
-  // console.log("JOINEDTEXT ", joinedText);
-  // const isSmall = isValidLength(joinedText);
-  // const size = getTokenCount(joinedText);
-  // console.log("IS IT SMALL?", size);
-  // if (isSmall) {
-  //   const objRes = await createObject("Intermediate", {
-  //     text: joinedText,
-  //     order: 0,
-  //   });
-  //   await createRelationship(
-  //     "Phase",
-  //     phaseID,
-  //     "intermediates",
-  //     "Intermediate",
-  //     objRes.id,
-  //     "phase"
-  //   );
-  //   console.log("CREATED INTERMEDIATE FOR SMALL ONE!", objRes);
-  // } else {
-  //   const res = await axios.post(
-  //     "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/fileupload",
-  //     {
-  //       identifier: phaseID,
-  //       data: joinedText,
-  //     },
-  //     {
-  //       headers: {
-  //         "Content-Type": "text/plain",
-  //       },
-  //     }
-  //   );
-  // console.log("big res", res);
-  // }
+  console.log("JOINEDTEXT ", joinedText);
+  const isSmall = isValidLength(joinedText);
+  const size = getTokenCount(joinedText);
+  console.log("IS IT SMALL?", size);
+  if (isSmall) {
+    const objRes = await createObject("Intermediate", {
+      text: joinedText,
+      order: 0,
+    });
+    await createRelationship(
+      "Phase",
+      phaseID,
+      "intermediates",
+      "Intermediate",
+      objRes.id,
+      "phase"
+    );
+    console.log("CREATED INTERMEDIATE FOR SMALL ONE!", objRes);
+  } else {
+    const res = await axios.post(
+      "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/fileupload",
+      {
+        identifier: phaseID,
+        data: joinedText,
+      },
+      {
+        headers: {
+          "Content-Type": "text/plain",
+        },
+      }
+    );
+    console.log("big res", res);
+  }
   return [];
 };
 

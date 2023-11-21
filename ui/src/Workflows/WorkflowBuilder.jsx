@@ -184,7 +184,7 @@ const copyWorkflow = async (
         );
       });
     }
-    // TECH DEBT! JUST GET DEMO WORKING. THESE NEED TO BE DONE TOO.
+    // TODO! JUST GET DEMO WORKING. THESE NEED TO BE DONE TOO.
     // CREATE FILTERS
 
     // CREATE SORTS

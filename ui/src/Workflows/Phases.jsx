@@ -45,7 +45,7 @@ const Phases = ({ phases, workflowID, workflowTitle }) => {
   };
   let fullEditPhase = {};
   if (!isEmpty(editPhase)) {
-    // TECH DEBT
+    // TODO
     // Not ideal to do this! It's a sneaky bit of code that makes Phases not get props
     // you'd normally expect.
     // Eventual refactor: Need to handle updates a little differently to accomodate rels gracefully

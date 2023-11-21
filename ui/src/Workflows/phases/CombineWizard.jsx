@@ -3,7 +3,12 @@ import React from "react";
 import { useQuery } from "@apollo/client";
 import { Box, Button, Code, Flex, FormLabel, Input } from "@chakra-ui/react";
 import axios from "axios";
-import { updatePhase } from "../../utils/weaviateServices";
+import { getTokenCount, isValidLength } from "../../utils/tokenHelpers";
+import {
+  createObject,
+  createRelationship,
+  updatePhase,
+} from "../../utils/weaviateServices";
 import { GET_INTERMEDIATES } from "./MultiPromptWizard";
 
 const CombineWizard = ({ phase, phaseID, prevPhaseID }) => {
@@ -44,6 +49,46 @@ const CombineWizard = ({ phase, phaseID, prevPhaseID }) => {
     };
     go();
   }, []);
+
+  // TODO: IF IT'S SMALL, JUST SAVE THE INTERMEDIATE
+  const updateAndBack = async () => {
+    console.log("JOINEDTEXT ", joinedText);
+    const isSmall = isValidLength(joinedText);
+    const size = getTokenCount(joinedText);
+    console.log("IS IT SMALL?", size);
+    if (isSmall) {
+      const objRes = await createObject("Intermediate", {
+        text: joinedText,
+        order: 0,
+      });
+      await createRelationship(
+        "Phase",
+        phaseID,
+        "intermediates",
+        "Intermediate",
+        objRes.id,
+        "phase"
+      );
+
+      console.log("CREATED INTERMEDIATE FOR SMALL ONE!", objRes);
+    } else {
+      const res = await axios.post(
+        "https://f5k974500j.execute-api.us-west-2.amazonaws.com/dev/fileupload",
+        {
+          identifier: phaseID,
+          data: joinedText,
+        },
+        {
+          headers: {
+            "Content-Type": "text/plain",
+          },
+        }
+      );
+      console.log("big res", res);
+    }
+    // update the data source with the s3 url
+    // set phase to Splitter
+  };
 
   return (
     <Box w="600px" h="800px" overflowY="scroll" overflowX="hidden">

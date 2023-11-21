@@ -151,12 +151,12 @@ export const requestPhasesState = atom({
   default: [],
 });
 
-// TECH DEBT TODO: THE SHAPE OF REQUESTS VS REQUEST & THE TYPES RETURNED IS CONFUSING!
+// TODO TODO: THE SHAPE OF REQUESTS VS REQUEST & THE TYPES RETURNED IS CONFUSING!
 // NEED TO FIGURE OUT HOW TO GET A CONSISTENT SHAPE THAT MAKES SENSE
 const phaseQuery = selectorFamily({
   key: "phaseQuery",
   get: (phaseID) => async () => {
-    // TECH DEBT: A BIT OF HACKINESS COUPLED TO Flow.jsx NOTE
+    // TODO: A BIT OF HACKINESS COUPLED TO Flow.jsx NOTE
     const splitIDs = phaseID.split("||");
     const prevID = splitIDs[0];
     const currID = splitIDs[1];
@@ -332,7 +332,7 @@ export const requestState = atomFamily({
                 }));
                 return;
               }
-              // TECH DEBT: THIS CONCAT IS TOO DEEP IN THE LOGIC
+              // TODO: THIS CONCAT IS TOO DEEP IN THE LOGIC
               const res = await runPrompt(
                 newValue.prompt + " " + newValue.context,
                 newValue.phaseID
