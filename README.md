@@ -1,2 +1,3 @@
-# synopsis
-LLM Workflow Builder
+# summa.ai
+
+Routine LLM Workflow Builder
