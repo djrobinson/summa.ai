@@ -84,7 +84,6 @@ const Home = () => {
   return (
       <Flex p={4} gridGap={12}>
       <Box
-        // eslint-disable-next-line react-hooks/rules-of-hooks
         bg={"white"}
         w="400px"
         boxShadow={"2xl"}
@@ -93,7 +92,7 @@ const Home = () => {
         
       >
       <Stack p="14px" h="full" spacing={8} maxW={'3xl'} textAlign={'justify'} justify="center">
-        <Heading fontWeight="400" fontSize="5xl">
+        <Heading fontWeight="400" fontSize="5xl" textAlign={'center'}>
         <Text as="span" color="teal">Summa</Text><Text as="span" color="darkGray">.ai</Text>
         </Heading>
         <Text color={'gray.600'} fontSize={{ base: 'sm', sm: 'lg' }}>
@@ -102,178 +101,13 @@ const Home = () => {
       </Stack>
       </Box>
 
-      <Box maxW={'5xl'}>
-        <Stack>
-          <Flex gridGap={12} >
-            <Stack>
-              <Tag p="13px" colorScheme='teal' borderRadius='full' fontSize="20px" fontWeight={'bold'}>
-                <TagLabel pl="10px">Step 1 - Set Up Your Account</TagLabel>
-              </Tag>
-              <Flex gridGap={6}>
-              <Card
-                heading={'Add Open AI API Key'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                description={'Add a key to enable access to Open AI\'s GPT-3 & GPT-4 models.'}
-                href={'#'}
-              />
-              <Card
-                heading={'Configure Model & Rate Limits'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                description={'Choose an LLM model and customize rate limits to manage LLM cost.'}
-                href={'#'}
-              />
-              </Flex>
-              <Box
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                bg={"white"}
-                boxShadow={"2xl"}
-                rounded={"2xl"}
-                p={4}
-                
-              >
-                <FormLabel fontSize="sm" fontWeight={'800'}>Quick Start</FormLabel>
-                <Flex justify="space-around">
-
-                  <Button bg="teal" color="white">Add API Key</Button>
-                  <Button ml="10px" bg="teal" color="white">View Rate Limit</Button>
-                </Flex>
-              </Box>
-            </Stack>
-            <Stack>
-              <Tag p="13px" colorScheme='blue' borderRadius='full' fontSize="20px" fontWeight={'bold'}>
-                <TagLabel pl="10px">Step 2 - Configure a Data Source</TagLabel>
-              </Tag>
-              <Flex gridGap={6}>
-              <Card
-                heading={'Import Data to Summa\'s Database'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                description={'Import PDF or TXT files, or copy and paste data from any source.'}
-                href={'#'}
-              />
-              <Card
-                heading={'Split the Data for LLM Processing'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                description={'Split the data to comply with LLM size limits.'}
-                href={'#'}
-              />
-              </Flex>
-              <Box
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                bg={"white"}
-                boxShadow={"2xl"}
-                rounded={"2xl"}
-                p={4}
-                
-              >
-                <FormLabel fontSize="sm" fontWeight={'800'}>Quick Start</FormLabel>
-                <Flex>
-                  <Input placeholder="Data Source Name..." value={dataSourceName} onChange={(e) => setDataSourceName(e.target.value)}  />
-                  <Button fontSize="12px" ml="10px" bg="teal" color="white"
-                    onClick={async () => {
-                      const ds = await createObject("DataSource", {
-                        name: dataSourceName,
-                      });
-                      navigate(`/data/${ds.id}`)
-                    }}    
-                  >Create</Button>
-                </Flex>
-              </Box>
-            </Stack>
-          </Flex>
-          <Flex  gridGap={12} mt="20px" >
-            <Stack>
-              <Tag p="13px" colorScheme='orange' borderRadius='full' fontSize="20px" fontWeight={'bold'}>
-                <TagLabel pl="10px">Step 3 - Create a Workflow</TagLabel>
-              </Tag>
-              <Flex gridGap={6}>
-              <Card
-                heading={'Build LLM Contexts from Data Source'}
-                description={'Restructure input by filtering, sorting, and limiting data source records into LLM contexts.'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                href={'#'}
-              />
-              <Card
-                heading={'Run LLM Prompts En Masse'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                description={'Build reusable workflows that run complex logical processing on data sources.'}
-                href={'#'}
-              />
-              </Flex>
-              <Box
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                bg={"white"}
-                boxShadow={"2xl"}
-                rounded={"2xl"}
-                p={4}
-                
-              >
-                <FormLabel fontSize="sm" fontWeight={'800'}>Quick Start</FormLabel>
-                <Flex>
-                <Input placeholder="Workflow Name..." />
-                <Select
-                  placeholder="Data Source..."
-                  ml="10px"
-                  onChange={(e) => {
-
-                  }}
-
-                >
-                  {['test'].map((k) => (
-                    <option value={k}>{k}</option>
-                  ))}
-                </Select>
-                  
-                  <Button fontSize="12px" ml="10px" bg="teal" color="white">Create</Button>
-                </Flex>
-              </Box>
-            </Stack>
-            <Stack>
-              <Tag p="13px" colorScheme='purple' borderRadius='full' fontSize="20px" fontWeight={'bold'}>
-                <TagLabel pl="10px">Step 4 - Publish a Report</TagLabel>
-              </Tag>
-              <Flex gridGap={6}>
-              <Card
-                heading={'Publish AI Generated Reports'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                description={'Publicize annotated reports for public viewing, retaining linkages to the original source.'}
-                href={'#'}
-              />
-              <Card
-                heading={'Cite Original Sources'}
-                icon={<Icon as={FcAcceptDatabase} w={10} h={10} />}
-                description={'Use AI to find supporting and opposing statements from original sources to verify reports.'}
-                href={'#'}
-              />
-              </Flex>
-              <Box
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                bg={"white"}
-                boxShadow={"2xl"}
-                rounded={"2xl"}
-                p={4}
-                
-              >
-                <FormLabel fontSize="sm" fontWeight={'800'}>Quick Start</FormLabel>
-                <Flex>
-                <Input placeholder="Report Name..."  />
-                <Select
-                  placeholder="Workflow..."
-                  ml="10px"
-                  onChange={(e) => {
-
-                  }}
-
-                >
-                  {['test'].map((k) => (
-                    <option value={k}>{k}</option>
-                  ))}
-                </Select>
-                  <Button fontSize="12px" ml="10px" bg="teal" color="white">Create</Button>
-                </Flex>
-              </Box>
-            </Stack>
-          </Flex>
-        </Stack>
+      <Box
+        h="750px"
+       bg={"white"}
+        w="400px"
+        boxShadow={"2xl"}
+        rounded={"2xl"}
+        p={6}>
       </Box>
     </Flex>
       
