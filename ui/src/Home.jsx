@@ -37,7 +37,7 @@ import {
   Select,
 } from "@chakra-ui/react";
 import { createObject } from "./utils/weaviateServices";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 
 
@@ -82,7 +82,7 @@ const Home = () => {
   const [dataSourceName, setDataSourceName] = React.useState("");
   const navigate = useNavigate();
   return (
-      <Flex p={4} gridGap={12}>
+    <Flex p={4} gridGap={12}>
       <Box
         bg={"white"}
         w="400px"
@@ -107,7 +107,19 @@ const Home = () => {
         w="400px"
         boxShadow={"2xl"}
         rounded={"2xl"}
+        textAlign={'center'}
         p={6}>
+        <Link to="/data"><Heading fontWeight="400" fontSize="2xl" >Data Sources</Heading></Link>
+      </Box>
+      <Box
+        h="750px"
+       bg={"white"}
+        w="400px"
+        boxShadow={"2xl"}
+        rounded={"2xl"}
+        textAlign={'center'}
+        p={6}>
+        <Link to="/workflows"><Heading fontWeight="400" fontSize="2xl" >Workflows</Heading></Link>
       </Box>
     </Flex>
       

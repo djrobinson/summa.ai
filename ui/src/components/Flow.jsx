@@ -118,46 +118,6 @@ const Options = (props) => {
             Add to Report
           </Button>
         </Flex>
-        <Flex>
-          <Button
-            size="xs"
-            w="50%"
-            m="5px"
-            mt={"5px"}
-            colorScheme="teal"
-            rounded={"full"}
-            flex={"1 0 auto"}
-            onClick={() => {
-              data.addPhase({
-                type: "SPLIT",
-                workflow_step: data.workflow_step,
-                step_order: data.step_order,
-                source_id: fixedId,
-              });
-            }}
-          >
-            Split
-          </Button>
-          <Button
-            size="xs"
-            w="50%"
-            m="5px"
-            mt={"5px"}
-            colorScheme="teal"
-            rounded={"full"}
-            flex={"1 0 auto"}
-            onClick={() => {
-              data.addPhase({
-                type: "COMBINE",
-                workflow_step: data.workflow_step,
-                step_order: data.step_order,
-                source_id: fixedId,
-              });
-            }}
-          >
-            Combine
-          </Button>
-        </Flex>
       </Box>
       <Handle
         type="target"

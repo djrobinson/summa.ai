@@ -57,7 +57,7 @@ export const FETCH_DATA_SOURCE = gql`
 export const createDataSourcePhase = async (
   workflowID,
   dataSource,
-  dataSourceCount,
+  dataSourceCount = 0,
   intermediates = []
 ) => {
   const phase = await createObject("Phase", {

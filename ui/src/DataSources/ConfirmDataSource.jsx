@@ -21,6 +21,7 @@ import IntermediatesPreview from "../components/IntermediatesPreview";
 import { FiRefreshCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { createObject } from "../utils/weaviateServices";
+import { createDataSourcePhase } from "../Workflows/phases/DataSourceSelector";
 
 const FETCH_DATA_SOURCE = gql`
   query GetDataSource($id: String!) {
@@ -104,6 +105,13 @@ const ConfirmDataSource = ({ setShowConfigure, setDsID, dataSourceID }) => {
             const wf = await createObject("Workflow", {
               name: workflowName,
             });
+            const phaseResult = await createDataSourcePhase(
+              wf.id,
+              dataSourceID,
+              0,
+              intermediates
+            );
+            console.log("PHASE RESULT: ", phaseResult);
             navigate(`/workflows/${wf.id}`)
           }}
           colorScheme="teal"

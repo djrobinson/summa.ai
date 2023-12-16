@@ -158,7 +158,7 @@ const copyWorkflow = async (
     if (cleanedPhased.type === "DATA_SOURCE") {
       phaseResult = await createDataSourcePhase(
         wf.id,
-        templateDataSource,
+        templateDataSource._additional.id,
         intermediates
       );
     } else {
