@@ -54,7 +54,6 @@ export default function App() {
           <Route path="/data/:id" element={<ConfigureDataSource />} />
           <Route path="/reports" element={<ReportsHome />} />
           <Route path="/reports/:id" element={<Report />} />
-          <Route path="/requests" element={<RequestManager />} />
           <Route path="/account" element={<AccountManager presetApiKey={apiKey} />} />
           {/* Using path="*"" means "match anything", so this route
                 acts like a catch-all for URLs that we don't have explicit

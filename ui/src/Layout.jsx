@@ -40,50 +40,6 @@ import {
 } from "./recoil/atoms";
 import { showBatchManagerState } from "./recoil/batchState";
 
-const SidebarContent = ({ onClose, hideOptions, ...rest }) => {
-  return (
-    <Box
-      transition="3s ease"
-      bg={useColorModeValue("white", "gray.900")}
-      borderRight="1px"
-      borderRightColor={useColorModeValue("gray.200", "gray.700")}
-      w={{ base: "full", md: 60 }}
-      pos="fixed"
-      h="full"
-      {...rest}
-    >
-      <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Text fontSize="3xl">
-          <Link to="/">
-            <Text as="span" color="teal">
-              Summa
-            </Text>
-            <Text as="span" color="darkGray">
-              .ai
-            </Text>
-          </Link>
-        </Text>
-        <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
-      </Flex>
-      {!hideOptions && (
-        <>
-          <NavItem>
-            <Link to="/data">Data Sources</Link>
-          </NavItem>
-          <NavItem>
-            <Link to="/workflows">Workflows</Link>
-          </NavItem>
-          <NavItem>
-            <Link to="/reports">Reports</Link>
-          </NavItem>
-        </>
-      )}
-      <NavItem>
-        <Link to="/account">Account</Link>
-      </NavItem>
-    </Box>
-  );
-};
 
 const NavItem = ({ icon, children, ...rest }) => {
   return (
