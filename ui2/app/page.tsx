@@ -8,6 +8,7 @@ import { DemoCreateAccount } from "@/components/home/create-account"
 import { DemoNotifications } from "@/components/home/notifications"
 import { DemoShareDocument } from "@/components/home/share-document"
 import { DemoTeamMembers } from "@/components/home/team-members"
+import DataSources from "@/components/home/datasources"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -51,7 +52,7 @@ export default function HomePage() {
         />
       </div>
       <div className="hidden items-start justify-center gap-6 rounded-lg p-8 md:grid lg:grid-cols-2 xl:grid-cols-3">
-        <div className="col-span-2 grid items-start gap-6 lg:col-span-1">
+        <div className="col-span-1 grid items-start gap-6 lg:col-span-1">
           <DemoContainer>
             <DemoCreateAccount />
           </DemoContainer>
@@ -59,35 +60,10 @@ export default function HomePage() {
             <DemoShareDocument />
           </DemoContainer>
         </div>
-        <div className="col-span-2 grid items-start gap-6 lg:col-span-1">
- 
-          
+        <div className="col-span-2 grid items-start gap-6 lg:col-span-2">
           <DemoContainer>
-            <DemoNotifications />
+            <DataSources />
           </DemoContainer>
-          <DemoContainer>
-            <DemoCookieSettings />
-          </DemoContainer>
-        </div>
-        <div className="col-span-2 grid items-start gap-6 lg:col-span-2 lg:grid-cols-2 xl:col-span-1 xl:grid-cols-1">
-        <DemoContainer>
-            <DemoTeamMembers />
-          </DemoContainer>
-          
-          <DemoContainer>
-            <DemoNotifications />
-          </DemoContainer>
-          <DemoContainer>
-            <Card>
-              <CardHeader>
-              <CardTitle>Next</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-1">
-              <Button>Go</Button>
-              </CardContent>
-            </Card>
-          </DemoContainer>
-
         </div>
       </div>
     </>

@@ -21,6 +21,7 @@ import {
 import './globals.css'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { UserNav } from '@/components/UserNav'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -38,8 +39,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
 
-        <Menubar>
+        <Menubar className="w-full align-items-space-between p-2">
           <MenubarMenu>
+          <Link href="/"><Button variant="ghost">Home</Button></Link>
             <MenubarTrigger>File</MenubarTrigger>
             <MenubarContent>
               <MenubarItem>
@@ -57,6 +59,9 @@ export default function RootLayout({
             <Link href="workflows"><Button variant="ghost">Data</Button></Link>
             <Link href="workflows"><Button variant="ghost">Reports</Button></Link>
           </MenubarMenu>
+          <div className="flex md:flex md:flex-grow flex-row justify-end space-x-1 pr-1">
+            <UserNav />
+          </div>
         </Menubar>
 
         {children}
