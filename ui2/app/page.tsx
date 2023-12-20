@@ -4,11 +4,11 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 import { DemoCookieSettings } from "@/components/home/cookie-settings"
-import { DemoCreateAccount } from "@/components/home/create-account"
+import { DemoCreateAccount } from "@/components/home/create-datasource"
 import { DemoNotifications } from "@/components/home/notifications"
 import { DemoShareDocument } from "@/components/home/share-document"
 import { DemoTeamMembers } from "@/components/home/team-members"
-import DataSources from "@/components/home/datasources"
+import DataSources from "@/components/home/sample-datatable"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 

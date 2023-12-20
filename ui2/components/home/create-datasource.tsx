@@ -16,9 +16,9 @@ export function DemoCreateAccount() {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Create an account</CardTitle>
+        <CardTitle className="text-2xl">Create a Data Source</CardTitle>
         <CardDescription>
-          Enter your email below to create your account
+          Upload a file to create a new data source.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -27,23 +27,20 @@ export function DemoCreateAccount() {
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="data-source-name">Data Source Name</Label>
+          <Input id="data-source-name" type="data-source-name" placeholder="m@example.com" />
+        </div>
+        <div className="grid gap-2">
+          <div className="grid w-full items-center gap-2">
+            <Label htmlFor="picture">File</Label>
+            <Input id="picture" type="file" />
           </div>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="m@example.com" />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" />
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full">Create account</Button>
+        <Button className="w-full">Create Data Source</Button>
       </CardFooter>
     </Card>
   )

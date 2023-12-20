@@ -42,7 +42,8 @@ export default function RootLayout({
         <Menubar className="w-full align-items-space-between p-2">
           <MenubarMenu>
           <Link href="/"><Button variant="ghost">Home</Button></Link>
-            <MenubarTrigger>File</MenubarTrigger>
+            <Link href="/account"><Button variant="ghost">Account</Button></Link>
+            <MenubarTrigger>Options</MenubarTrigger>
             <MenubarContent>
               <MenubarItem>
                 New Tab <MenubarShortcut>⌘T</MenubarShortcut>
@@ -54,10 +55,6 @@ export default function RootLayout({
               <MenubarItem>Print</MenubarItem>
             </MenubarContent>
             <MenubarSeparator />
-            <Link href="/account"><Button variant="ghost">Account</Button></Link>
-            <Link href="workflows"><Button variant="ghost">Workflows</Button></Link>
-            <Link href="workflows"><Button variant="ghost">Data</Button></Link>
-            <Link href="workflows"><Button variant="ghost">Reports</Button></Link>
           </MenubarMenu>
           <div className="flex md:flex md:flex-grow flex-row justify-end space-x-1 pr-1">
             <UserNav />
