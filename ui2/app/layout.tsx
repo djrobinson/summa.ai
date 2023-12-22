@@ -16,8 +16,6 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar"
 
-
-
 import './globals.css'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -38,11 +36,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-
+        <main className="dark bg-background h-screen">
         <Menubar className="w-full align-items-space-between p-2">
           <MenubarMenu>
-          <Link href="/"><Button variant="ghost">Home</Button></Link>
-            <Link href="/account"><Button variant="ghost">Account</Button></Link>
+          <Link href="/"><Button>Home</Button></Link>
+            <Link href="/account"><Button>Account</Button></Link>
             <MenubarTrigger>Options</MenubarTrigger>
             <MenubarContent>
               <MenubarItem>
@@ -60,8 +58,8 @@ export default function RootLayout({
             <UserNav />
           </div>
         </Menubar>
-
         {children}
+        </main>
         </body>
     </html>
   )
